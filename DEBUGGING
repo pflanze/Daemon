@@ -1,15 +1,14 @@
 In case you somehow got stuck with an instance that won't be stopped
-through running ".../Daemon stop", here is how to find the
-processes making up the daemon:
+through running ".../Daemon stop", here is an example how to find the
+processes making up the daemon, running the my-service example:
 
 
 $ ps auxwwf
 ...
-root     16289  0.0  0.0  10620  1240 ?        Ss   23:56   0:00 bash -c exec /opt/Daemon/daemon 2>&1 | logger -t Daemon
-root     16290  0.0  0.0  10624  1260 ?        S    23:56   0:00  \_ /bin/bash /opt/Daemon/daemon
-root     16292  0.0  0.0   5544   520 ?        S    23:56   0:00  |   \_ cat /var/run/Daemon.fifo
-root     16293  0.0  0.0  10624   456 ?        S    23:56   0:00  |   \_ /bin/bash /opt/Daemon/daemon
-root     16291  0.0  0.0   5524   544 ?        S    23:56   0:00  \_ logger -t Daemon
+root       429  0.0  0.0  10636  1276 ?        Ss   17:55   0:00 /bin/bash /opt/Daemon/_daemon
+root       430  0.0  0.0   5524   548 ?        S    17:55   0:00  \_ logger -t my-service
+root       431  0.0  0.0   5544   516 ?        S    17:55   0:00  \_ cat /var/run/my-service.fifo
+root       432  0.0  0.0  10636   468 ?        S    17:55   0:00  \_ /bin/bash /opt/Daemon/_daemon
 ...
 
 All these 5 processes are a normal part of the daemon.
@@ -17,6 +16,6 @@ All these 5 processes are a normal part of the daemon.
 If everything is normal, then you will get the following:
 
 novo:~# cat /var/run/Daemon.pid 
-16289
+429
 
 The pid matching the first pid of the above.
