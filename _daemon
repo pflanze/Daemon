@@ -20,10 +20,14 @@ fi
 
 while true; do
     cat "$DAEMON_FIFO"  | while read line; do
-	# run the main program (the same way as system(3) does)
-	echo "$line" | {
-	    sh -c "$DAEMON_MAINPROGRAM" || echo "['$DAEMON_MAINPROGRAM' exited with code $?]"
-	}
+	# run the main program (the same way as system(3) does);
+	# avoid being killed by SIGPIPE if the mainprogram doesn't
+	# read stdin and $line is big
+	(
+	    echo "$line" | {
+		sh -c "$DAEMON_MAINPROGRAM" || echo "['$DAEMON_MAINPROGRAM' exited with code $?]"
+	    }
+	) || true
     done
 done
 
