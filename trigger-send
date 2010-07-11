@@ -1,8 +1,5 @@
 #!/usr/bin/perl -w
 
-# Mit Feb 13 13:35:53 CET 2008
-(my $email='chrjae%gmail,com')=~ tr/%,/@./;
-
 use strict;
 
 our $timeout=10;
