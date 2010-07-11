@@ -2,10 +2,20 @@
 
 use strict;
 
-our $servicename="my-daemon";
-our $pidfile="/var/run/$servicename.pid";
-our $lockfile="/var/run/$servicename.lck";
-our $daemon="/opt/my-daemon/daemon";  # change to the full path to the daemon script
+sub xenv {
+    my ($key)=@_;
+    my $v= $ENV{$key};
+    defined $v
+      or die "missing environment variable '$key'";
+    $v
+}
+
+our $servicename= xenv "SERVICE_NAME";
+our $service_run_dir= xenv "SERVICE_RUN_DIR";
+our $daemon= xenv "SERVICE_DAEMON";
+
+our $pidfile="$service_run_dir/$servicename.pid";
+our $lockfile="$service_run_dir/$servicename.lck";
 
 use Fcntl ':flock';
 use POSIX qw(setsid);
