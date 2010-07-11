@@ -1,0 +1,16 @@
+In case you somehow got stuck with an instance that won't be stopped
+through running ".../my-daemon stop", here is how to find the
+processes making up the daemon:
+
+
+$ ps auxwwf
+...
+root     16289  0.0  0.0  10620  1240 ?        Ss   23:56   0:00 bash -c exec /opt/my-daemon/daemon 2>&1 | logger -t my-daemon
+root     16290  0.0  0.0  10624  1260 ?        S    23:56   0:00  \_ /bin/bash /opt/my-daemon/daemon
+root     16292  0.0  0.0   5544   520 ?        S    23:56   0:00  |   \_ cat /var/run/my-daemon.fifo
+root     16293  0.0  0.0  10624   456 ?        S    23:56   0:00  |   \_ /bin/bash /opt/my-daemon/daemon
+root     16291  0.0  0.0   5524   544 ?        S    23:56   0:00  \_ logger -t my-daemon
+...
+
+All these 5 processes are a normal part of the daemon.
+
