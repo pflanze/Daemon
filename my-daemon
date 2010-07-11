@@ -1,0 +1,44 @@
+#!/bin/bash
+
+servicename=my-daemon
+pidfile="/var/run/$servicename.pid"
+daemon=/root/daemon  # change to install path
+
+# since the daemon is written as shell script, there is no binary name
+# characterizing it, so start-stop-daemon seems to be unable to stop
+# it; so instead start it in a new process group (using setsid) and
+# kill the process group ourselves:
+
+start () {
+    # quote path:
+    qdaemon=$(printf '%q' "$daemon")
+    qservicename=$(printf '%q' "$servicename")
+    start-stop-daemon --pidfile "$pidfile" --make-pidfile --background --exec /usr/bin/setsid --start -- bash -c "exec $qdaemon 2>&1 | logger -t $qservicename"
+}
+
+stop () {
+    if [ -f "$pidfile" ]; then
+	for pid in `cat "$pidfile"`; do
+	    kill -INT -$pid
+	done
+	rm -f "$pidfile"
+    fi
+}
+
+case "$1" in
+    start)
+    start
+    ;;
+    stop)
+    stop
+    ;;
+    restart)
+    stop
+    start
+    ;;
+    *)
+    echo "usage: $0 start|stop|restart"
+    exit 1
+    ;;
+esac
+

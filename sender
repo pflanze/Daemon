@@ -1,0 +1,6 @@
+#!/bin/bash
+
+thefifo=/var/run/my-daemon.fifo
+
+echo "run!" > "$thefifo"
+

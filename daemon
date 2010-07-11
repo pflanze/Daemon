@@ -1,0 +1,20 @@
+#!/bin/bash
+
+thefifo=/var/run/my-daemon.fifo
+
+if [ ! -e "$thefifo" ]; then
+    # create the fifo with private permissions:
+    mkfifo "$thefifo" -m 0600
+    # then open up the permissions:
+    chgrp mydaemon "$thefifo"; chmod g+w "$thefifo"
+    # or maybe even allow everyone to write to it:
+    chmod o+w "$thefifo"
+fi
+
+while true; do
+    cat "$thefifo"  | while read line; do
+	echo "$line";
+	# run your program from here.
+    done
+done
+
