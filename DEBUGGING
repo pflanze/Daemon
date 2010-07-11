@@ -14,3 +14,9 @@ root     16291  0.0  0.0   5524   544 ?        S    23:56   0:00  \_ logger -t m
 
 All these 5 processes are a normal part of the daemon.
 
+If everything is normal, then you will get the following:
+
+novo:~# cat /var/run/my-daemon.pid 
+16289
+
+The pid matching the first pid of the above.
