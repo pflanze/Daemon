@@ -50,16 +50,20 @@ our $socket= IO::Socket::UNIX->new
   )
   or die "opening socket '$socketpath': $!";#!
 
-use Chj::schemestring 'schemestring_oneline';
-$socket->send(@ARGV ?
-	      "trigger: ".join("\t",map { schemestring_oneline $_ } @ARGV)."\n"
-	      :
-	      "trigger\n")
+$socket->send(join("\0", @ARGV))
   or die "send: $!";
+
 my $result= <$socket>;
-if ($result ne "ok\n") {
-    die "$myname: did not get an ok from the server, but: $result";
-}
+
+my ($exitcode)= $result=~ /^(\d+)$/
+  or die "invalid reply";
+
 $socket->close
   or die "close: $!";
+
+if ($exitcode==0 or $exitcode > 255) {
+    exit ($exitcode << 8);
+} else {
+    die "$myname: remote process died with signal $exitcode\n";
+}
 
