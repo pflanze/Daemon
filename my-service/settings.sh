@@ -10,7 +10,7 @@ export SERVICE_RUN_DIR=/var/run
 
 # SERVICE_DAEMON is being fed to a shell through system(2), thus can
 # contain arguments (the string will be split on spaces etc.)
-export SERVICE_DAEMON=/opt/my-daemon/my-service/daemon
+export SERVICE_DAEMON=/opt/Daemon/my-service/daemon
 
 # daemon settings:
 

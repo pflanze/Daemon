@@ -1,5 +1,5 @@
 #!/bin/bash
 
-source /opt/my-daemon/my-service/settings.sh
+source /opt/Daemon/my-service/settings.sh
 
-exec /opt/my-daemon/_sender "$@"
+exec /opt/Daemon/_sender "$@"

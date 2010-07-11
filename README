@@ -39,7 +39,9 @@ INSTALL
    # cd /opt
    # git clone git://github.com/pflanze/Daemon.git 
 
-  In case you want to keep in in a different place, you'll have to adapt the paths in
+  In case you want to keep in in a different place, you'll have to
+  adapt the paths referring to /opt/Daemon in the examples in the
+  'my-service' subdirectory.
 
 
 CONFIGURE
