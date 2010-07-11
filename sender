@@ -1,8 +1,9 @@
 #!/bin/bash
 
-# To be run as non-root user
+# To be run as non-root user,
+# after setting the DAEMON_FIFO env variable
 
-thefifo=/var/run/my-daemon.fifo
+set -eu
 
-echo "run!" > "$thefifo"
+echo "run!" > "$DAEMON_FIFO"
 

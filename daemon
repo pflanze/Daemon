@@ -1,20 +1,21 @@
 #!/bin/bash
 
 # To be run as root (or started from the SysV init script)
+# after setting the DAEMON_FIFO env variable
 
-thefifo=/var/run/my-daemon.fifo
+set -eu
 
-if [ ! -e "$thefifo" ]; then
+if [ ! -e "$DAEMON_FIFO" ]; then
     # create the fifo with private permissions:
-    mkfifo "$thefifo" -m 0600
+    mkfifo "$DAEMON_FIFO" -m 0600
     # then open up the permissions:
-    chgrp mydaemon "$thefifo"; chmod g+w "$thefifo"
+    chgrp mydaemon "$DAEMON_FIFO"; chmod g+w "$DAEMON_FIFO"
     # or maybe even allow everyone to write to it:
-    chmod o+w "$thefifo"
+    chmod o+w "$DAEMON_FIFO"
 fi
 
 while true; do
-    cat "$thefifo"  | while read line; do
+    cat "$DAEMON_FIFO"  | while read line; do
 	echo "$line";
 	# run your program from here.
     done
