@@ -23,7 +23,7 @@ start () {
 	    return
 	fi
     fi
-    start-stop-daemon --pidfile "$pidfile" --make-pidfile --background --exec /usr/bin/setsid --start -- bash -c "exec $qdaemon 2>&1 | logger -t $qservicename"
+    start-stop-daemon --pidfile "$pidfile" --make-pidfile --background --exec /usr/bin/perl --start -- -we 'use POSIX qw(setsid); setsid or die $!; exec @ARGV' bash -c "exec $qdaemon 2>&1 | logger -t $qservicename"
 }
 
 stop () {
