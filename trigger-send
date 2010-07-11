@@ -2,7 +2,7 @@
 
 use strict;
 
-our $timeout=10;
+our $default_timeout=10;
 
 $0=~ /(.*?)([^\/]+)\z/s or die "?";
 my ($mydir, $myname)=($1,$2);
@@ -10,13 +10,17 @@ sub usage {
     print STDERR map{"$_\n"} @_ if @_;
     print "$myname [ arguments ]
 
-  Send a trigger message to a trigger-listen instance.  If arguments
-  are given, those are sent with the message, but trigger-listen must
-  have been started with --accept-arguments in this case or it will
-  ignore the message.
+  Ask the daemon listening at DAEMON_SOCKET to run its main program,
+  passing arguments to it. Exit with the exit code of the main
+  program, or if it was killed, report the signal and exit with an
+  error code.
 
-  Options:
-  --timeout seconds   instead of the default $timeout
+  Environment variables:
+   required:
+    DAEMON_SOCKET   path to communication socket
+
+   optional:
+    TIMEOUT   connect timeout in seconds, instead of the default $default_timeout
 
 ";
 exit (@_ ? 1 : 0);
@@ -33,6 +37,16 @@ GetOptions("verbose"=> \$verbose,
 	   "help"=> sub{usage},
 	   "timeout"=> \$timeout,
 	   ) or exit 1;
+
+our $timeout = do {
+    if (defined $ENV{TIMEOUT}) {
+	$ENV{TIMEOUT}=~ /^(\d+)$/
+	  or die "invalid TIMEOUT variable '$TIMEOUT'";
+	$1
+    } else {
+	$default_timeout
+    }
+};
 
 our $socketpath= $ENV{DAEMON_SOCKET}
   or die "missing environment variable DAEMON_SOCKET";
