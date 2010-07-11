@@ -4,7 +4,7 @@
 
 servicename=my-daemon
 pidfile="/var/run/$servicename.pid"
-daemon=/opt/my-daemon/daemon  # change to install path
+daemon=/opt/my-daemon/daemon  # change to the full path to the daemon script
 
 # since the daemon is written as shell script, there is no binary name
 # characterizing it, so start-stop-daemon seems to be unable to stop
