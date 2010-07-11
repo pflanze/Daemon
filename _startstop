@@ -73,7 +73,7 @@ sub start {
 	if (my $pid = xfork) {
 	    open my $pidfh, ">", $pidfile
 	      or die $!;
-	    print $pidfh $pid
+	    print $pidfh "$pid\n"
 	      or die $!;
 	    xclose $pidfh;
 	} else {
@@ -108,7 +108,7 @@ sub stop {
     } else {
 	open my $pidfh, "<", $pidfile
 	  or die $!;
-	my $pid= <$pidfh>;
+	my $pid= <$pidfh>; chomp $pid;
 	xclose $pidfh;
 	# kill the process group:
 	kill -2, $pid
