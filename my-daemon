@@ -13,6 +13,14 @@ start () {
     # quote path:
     qdaemon=$(printf '%q' "$daemon")
     qservicename=$(printf '%q' "$servicename")
+    # Is the service already running? Test by killing the group, since
+    # start-stop-daemon doesn't check correctly:
+    if [ -f "$pidfile" ]; then
+	if kill -0 -`cat "$pidfile"` 2> /dev/null; then
+	    # echo 'still running'
+	    return
+	fi
+    fi
     start-stop-daemon --pidfile "$pidfile" --make-pidfile --background --exec /usr/bin/setsid --start -- bash -c "exec $qdaemon 2>&1 | logger -t $qservicename"
 }
 
