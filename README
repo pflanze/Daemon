@@ -1,0 +1,20 @@
+Framework to write daemons in Debian that listen on a fifo for
+commands from another user. The purpose is to securely allow a user to
+run predefined commands as root.
+
+There are three possible advantages over using "sudo" for the same
+purpose:
+
+ - there is no need to configure /etc/sudoers (which might be
+   nontrivial to do automatically)
+
+ - the root process is not exposed to any other influence from the
+   other user than what is being read from the fifo (unlike with sudo
+   where environment variables, current working directory, and
+   possibly more is under the control of the user).
+
+ - only one instance of the root command is run at any one time;
+   multiple requests are being stacked up and run one after
+   another. So there is no risk of overlapping actions that are meant
+   to be isolated (or said differently, no need to care about correct
+   locking)
