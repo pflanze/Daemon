@@ -18,7 +18,6 @@ sub usage {
   Options:
   --timeout seconds   instead of the default $timeout
 
-  (Christian Jaeger <$email>)
 ";
 exit (@_ ? 1 : 0);
 }
