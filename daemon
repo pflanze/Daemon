@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# To be run as root (or started from the SysV init script)
+
 thefifo=/var/run/my-daemon.fifo
 
 if [ ! -e "$thefifo" ]; then

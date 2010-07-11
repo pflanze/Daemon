@@ -1,3 +1,5 @@
+WHAT
+
 Framework to write daemons in Debian that listen on a fifo for
 commands from another user. The purpose is to securely allow a user to
 run predefined commands as root.
@@ -18,3 +20,39 @@ purpose:
    another. So there is no risk of overlapping actions that are meant
    to be isolated (or said differently, no need to care about correct
    locking)
+
+
+The trickiest part doing this is starting and stopping the daemon.
+
+
+DEPENDENCIES
+
+start-stop-daemon from Debian (this is present on all Debian
+installations, but not part of some other distributions). Not sure
+it's worth it, could be replaced.
+
+
+INSTALL
+
+- decide upon a name for your daemon (instead of 'my-daemon', for
+  example 'your-daemon')
+
+- put the directory containing this file to a location where you want
+  to keep it (for example, /opt/your-daemon)
+
+- change the path in the 'thefifo' variable in both the 'daemon' and
+  'sender' scripts to use your daemon name
+
+- in 'daemon', change or remove the 'chgrp' and 'chmod' lines as fits
+  your situation
+
+- also in 'daemon', put your code at '# run your program from here.'
+
+- * rename 'my-daemon' to the new name,
+  * change 'servicename' in it to the new name,
+  * change the path in the 'daemon' variable to the location of the
+    daemon script,
+  * move or symlink to /etc/init.d/,
+  * add symlink in /etc/rc2.d/ (use whatever sysv init configuration
+    procedure you prefer)
+
