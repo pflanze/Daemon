@@ -103,6 +103,11 @@ sub stop {
 	# kill the process group:
 	kill -2, $pid
 	  or warn "could not kill $pid: $!";
+	# wait until it ended:
+	while (kill 0, -$pid) {
+	    #warn "waiting for termination..";
+	    sleep 1;
+	}
     }
 }
 
