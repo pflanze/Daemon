@@ -1,5 +1,0 @@
-#!/bin/bash
-
-source /opt/Daemon/my-service/settings.sh
-
-exec /opt/Daemon/_daemon "$@"

@@ -53,9 +53,10 @@ CONFIGURE
   whereever you want (for example "your-service" in the same parent
   directory), then adapt it:
 
-  * change the contents of settings.sh
-  * adapt the path to settings.sh in the 'source ' line of the 3
-    scripts: sender startstop daemon
+  * change the contents of settings.sh (most certainly SERVICE_NAME
+    and DAEMON_MAINPROGRAM)
+  * adapt the path to settings.sh in the 'source ' line of the
+    scripts: sender startstop
   * in 'daemon', put your code at '# run your program from here.'
   * move or symlink 'startstop' to '/etc/init.d/your-service',
   * add symlink in /etc/rc2.d/ (use whatever sysv init configuration

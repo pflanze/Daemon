@@ -8,9 +8,12 @@ export SERVICE_NAME=my-service
 # make sure they won't conflict with files from any other programs!
 export SERVICE_RUN_DIR=/var/run
 
-# SERVICE_DAEMON is being fed to a shell through system(2), thus can
-# contain arguments (the string will be split on spaces etc.)
-export SERVICE_DAEMON=/opt/Daemon/my-service/daemon
+# SERVICE_DAEMON is being passed to sh -c, through system(3). For the
+# fifo serving daemon:
+export SERVICE_DAEMON=/opt/Daemon/_daemon
+# (Note: _daemon can be called directly (no wrapper needed), since the
+# settings are already loaded into the environment from the section
+# below)
 
 # daemon settings:
 
@@ -20,3 +23,8 @@ export DAEMON_FIFO=/var/run/"$SERVICE_NAME".fifo
 # set to a group name.
 export DAEMON_FIFO_GROUP=""
 
+# DAEMON_MAINPROGRAM will be run each time a message (more precisely,
+# *a line of text*) is received over the fifo; the message being
+# offered on the program's stdin.
+# DAEMON_MAINPROGRAM will be passed to sh -c
+export DAEMON_MAINPROGRAM=cat

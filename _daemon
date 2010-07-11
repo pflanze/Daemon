@@ -20,8 +20,10 @@ fi
 
 while true; do
     cat "$DAEMON_FIFO"  | while read line; do
-	echo "$line";
-	# run your program from here.
+	# run the main program (the same way as system(3) does)
+	echo "$line" | {
+	    sh -c "$DAEMON_MAINPROGRAM" || echo "['$DAEMON_MAINPROGRAM' exited with code $?]"
+	}
     done
 done
 
