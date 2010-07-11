@@ -114,9 +114,27 @@ sub stop {
 	kill -2, $pid
 	  or warn "could not kill $pid: $!";
 	# wait until it ended:
+	my $t=0;
+	my $sleeptime= 0.1; # seconds
+	my $msginterval = int(5 / $sleeptime); # every .. seconds
+	my $endt= 30 / $sleeptime; # SIGKILL after .. seconds
 	while (kill 0, -$pid) {
-	    #warn "waiting for termination..";
-	    sleep 1;
+	    if ($t > $endt) {
+		if (kill -9, $pid) {
+		    msg "forcibly killed service with SIGKILL"
+		} else {
+		    warn "could not kill, stopped right before sending signal 9?: $!";
+		}
+		last;
+	    }
+	    $t++;
+	    if (not $t % $msginterval) {
+		msg ("still waiting for termination, will send SIGKILL in ".
+		     (($endt - $t) * $sleeptime).
+		     " seconds");
+	    }
+	    # sleep a bit:
+	    select undef,undef,undef, $sleeptime;
 	}
     }
 }
