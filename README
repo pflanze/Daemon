@@ -49,8 +49,8 @@ INSTALL
 - also in 'daemon', put your code at '# run your program from here.'
 
 - * rename 'my-daemon' to the new name,
-  * change 'servicename' in it to the new name,
-  * change the path in the 'daemon' variable to the location of the
+  * change '$servicename' in it to the new name,
+  * change the path in the '$daemon' variable to the location of the
     daemon script,
   * move or symlink to /etc/init.d/,
   * add symlink in /etc/rc2.d/ (use whatever sysv init configuration
