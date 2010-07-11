@@ -34,25 +34,27 @@ it's worth it, could be replaced.
 
 INSTALL
 
-- decide upon a name for your daemon (instead of 'my-daemon', for
-  example 'your-daemon')
+- check out this directory to /opt/:
 
-- put the directory containing this file to a location where you want
-  to keep it (for example, /opt/your-daemon)
+   # cd /opt
+   # git clone git://github.com/pflanze/Daemon.git 
 
-- change the path in the 'thefifo' variable in both the 'daemon' and
-  'sender' scripts to use your daemon name
+  In case you want to keep in in a different place, you'll have to adapt the paths in
 
-- in 'daemon', change or remove the 'chgrp' and 'chmod' lines as fits
-  your situation
 
-- also in 'daemon', put your code at '# run your program from here.'
+CONFIGURE
 
-- * rename 'my-daemon' to the new name,
-  * change '$servicename' in it to the new name,
-  * change the path in the '$daemon' variable to the location of the
-    daemon script,
-  * move or symlink to /etc/init.d/,
+- decide upon a name for your service (for example 'your-service')
+
+- copy the directory "my-service" (which is an example simply printing
+  out the message that has been received over the fifo to the log) to
+  whereever you want (for example "your-service" in the same parent
+  directory), then adapt it:
+
+  * change the contents of settings.sh
+  * adapt the path to settings.sh in the 'source ' line of the 3
+    scripts: sender startstop daemon
+  * in 'daemon', put your code at '# run your program from here.'
+  * move or symlink 'startstop' to '/etc/init.d/your-service',
   * add symlink in /etc/rc2.d/ (use whatever sysv init configuration
     procedure you prefer)
-

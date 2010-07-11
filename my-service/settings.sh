@@ -4,11 +4,13 @@
 # startstop settings:
 
 export SERVICE_NAME=my-service
+# $SERVICE_NAME.{pid,lck} files will be created here:
+# make sure they won't conflict with files from any other programs!
 export SERVICE_RUN_DIR=/var/run
 
-# SERVICE_DAEMON is being fed to system, thus can contain arguments
-# (it's split on spaces etc.)
-export SERVICE_DAEMON=/opt/my-daemon/daemon
+# SERVICE_DAEMON is being fed to a shell through system(2), thus can
+# contain arguments (the string will be split on spaces etc.)
+export SERVICE_DAEMON=/opt/my-daemon/my-service/daemon
 
 # daemon settings:
 
