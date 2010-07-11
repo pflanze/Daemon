@@ -9,9 +9,13 @@ if [ ! -e "$DAEMON_FIFO" ]; then
     # create the fifo with private permissions:
     mkfifo "$DAEMON_FIFO" -m 0600
     # then open up the permissions:
-    chgrp mydaemon "$DAEMON_FIFO"; chmod g+w "$DAEMON_FIFO"
-    # or maybe even allow everyone to write to it:
-    chmod o+w "$DAEMON_FIFO"
+    if [ -n "$DAEMON_FIFO_GROUP" ]; then
+	chgrp "$DAEMON_FIFO_GROUP" "$DAEMON_FIFO"
+	chmod g+w "$DAEMON_FIFO"
+    else
+        # allow everyone to write to it:
+	chmod go+w "$DAEMON_FIFO"
+    fi
 fi
 
 while true; do

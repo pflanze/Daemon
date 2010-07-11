@@ -13,3 +13,8 @@ export SERVICE_DAEMON=/opt/my-daemon/daemon
 # daemon settings:
 
 export DAEMON_FIFO=/var/run/"$SERVICE_NAME".fifo
+
+# For DAEMON_FIFO_GROUP, "" means world writable! To close it down,
+# set to a group name.
+export DAEMON_FIFO_GROUP=""
+
