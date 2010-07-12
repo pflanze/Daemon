@@ -20,6 +20,8 @@ Library for Daemon package, mostly put together from Chj:: modules.
 
 use strict;
 
+use Carp;
+
 sub msg {
     print @_,"\n"
 }
@@ -28,13 +30,13 @@ sub xenv {
     my ($key)=@_;
     my $v= $ENV{$key};
     defined $v
-      or die "missing environment variable '$key'";
+      or croak "missing environment variable '$key'";
     $v
 }
 
 sub xfork {
     my $pid=fork;
-    defined $pid or die "fork: $!";
+    defined $pid or croak "fork: $!";
     $pid
 }
 
@@ -46,7 +48,7 @@ sub xexec {
 sub xclose {
     my ($fh)=@_;
     close $fh
-      or die "close $fh: $!";
+      or croak "close $fh: $!";
 }
 
 sub xdup2 {
@@ -58,11 +60,9 @@ sub xdup2 {
     for my $dup (@_) {
 	my $fileno= $dup=~ /^\d+\z/s ? $dup : die;
 	POSIX::dup2($myfileno,$fileno)
-	  or die "xdup2 (fd $myfileno) to $dup (fd $fileno): $!";
+	  or croak "xdup2 (fd $myfileno) to $dup (fd $fileno): $!";
     }
 }
-
-use Carp;
 
 sub xsystem {
     @_>0 or croak "xsystem: missing arguments";
@@ -86,7 +86,7 @@ sub xpipe {
 sub xprint_to {
     my $fh=shift;
     print $fh @_
-      or die "printing to $fh: $!";##sigh sensible message?
+      or croak "printing to $fh: $!";##sigh sensible message?
 }
 
 1
