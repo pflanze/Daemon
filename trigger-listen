@@ -5,7 +5,6 @@ use lib "/opt/Daemon";
 use Chj_library;
 
 
-our $sleeptime=1.0;
 our $maxchildren= 10;
 
 $0=~ /(.*?)([^\/]+)\z/s or die "?";
@@ -21,8 +20,6 @@ sub usage {
   again (thus no triggers are being missed).
 
   Options:
-  --sleep n    sleep n instead of $sleeptime  (I don't remember the
-               use of the sleeptime right now)
   --umask val  use umask instead of the current one (relevant for
                creating the socket file)
   --accept-arguments  instead of just the trigger message, accept
@@ -43,10 +40,8 @@ our $verbose=0;
 our $DEBUG;
 our $umask;
 our $opt_accept_arguments;
-our $opt_sleeptime;
 GetOptions("verbose"=> \$verbose,
 	   "help"=> sub{usage},
-	   "sleeptime=s"=> \$opt_sleeptime,
 	   "debug"=> \$DEBUG,
 	   "umask=s"=> \$umask,
 	   "accept-arguments"=>\$opt_accept_arguments,
@@ -55,10 +50,6 @@ usage unless @ARGV >= 2;
 $DEBUG||=$verbose;
 our $socketpath= shift @ARGV;
 our @cmd= @ARGV;
-if ($opt_accept_arguments and $opt_sleeptime) {
-    usage "--accept-arguments is incompatible with --sleep"
-}
-$sleeptime= $opt_sleeptime if defined $opt_sleeptime;
 
 use IO::Socket::UNIX;
 
