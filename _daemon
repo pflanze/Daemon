@@ -93,7 +93,6 @@ $SIG{CHLD}= do {
 
 # --- main ----------------------------
 
-eval {
     while(1) {
 	my $conn= $socket->accept
 	  or do {
@@ -239,9 +238,4 @@ eval {
 	}
 	warn "going to accept again" if $DEBUG;
     }
-};
-my $e=$@;
-die $e;
 
-#use Chj::ruse;
-#use Chj::Backtrace; use Chj::repl; repl;
