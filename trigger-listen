@@ -13,23 +13,6 @@ sub usage {
     print STDERR map{"$_\n"} @_ if @_;
     print "$myname
 
-  Listens on socketpath, and expects senders to print a 'trigger'
-  line, and when that happens, after waiting for --sleep seconds
-  ($sleeptime by default), runs the given cmd / arguments. If new
-  triggers are being issued before the cmd finishes, it is being run
-  again (thus no triggers are being missed).
-
-  Options:
-  --umask val  use umask instead of the current one (relevant for
-               creating the socket file)
-  --accept-arguments  instead of just the trigger message, accept
-               messages with a list of strings encoded in them, which
-               are then passed as additional arguments to cmd.
-               Switches to piped handler, which does not have the
-               property of running only once if before starting a run
-               multiple triggers have been given, but instead runs as
-               many times as triggers have been sent, but still
-               serialized. Also switches off sleeping.
 
 ";
 exit (@_ ? 1 : 0);
