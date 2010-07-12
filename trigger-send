@@ -34,7 +34,7 @@ if (@ARGV==1 and ($ARGV[0] eq "-h" or
 our $timeout = do {
     if (defined $ENV{TIMEOUT}) {
 	$ENV{TIMEOUT}=~ /^(\d+)$/
-	  or die "invalid TIMEOUT variable '$TIMEOUT'";
+	  or die "invalid TIMEOUT variable '$ENV{TIMEOUT}'";
 	$1
     } else {
 	$default_timeout
