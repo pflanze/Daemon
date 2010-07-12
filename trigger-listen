@@ -11,7 +11,7 @@ $0=~ /(.*?)([^\/]+)\z/s or die "?";
 my ($mydir, $myname)=($1,$2);
 sub usage {
     print STDERR map{"$_\n"} @_ if @_;
-    print "$myname socketpath cmd [arguments]
+    print "$myname
 
   Listens on socketpath, and expects senders to print a 'trigger'
   line, and when that happens, after waiting for --sleep seconds
@@ -35,21 +35,10 @@ sub usage {
 exit (@_ ? 1 : 0);
 }
 
-use Getopt::Long;
-our $verbose=0;
-our $DEBUG;
-our $umask;
-our $opt_accept_arguments;
-GetOptions("verbose"=> \$verbose,
-	   "help"=> sub{usage},
-	   "debug"=> \$DEBUG,
-	   "umask=s"=> \$umask,
-	   "accept-arguments"=>\$opt_accept_arguments,
-	   ) or exit 1;
-usage unless @ARGV >= 2;
-$DEBUG||=$verbose;
-our $socketpath= shift @ARGV;
-our @cmd= @ARGV;
+usage if @ARGV;
+our $DEBUG= $ENV{DEBUG};
+our $socketpath= $ENV{DAEMON_SOCKET}
+  or die "missing environment variable DAEMON_SOCKET";
 
 use IO::Socket::UNIX;
 
