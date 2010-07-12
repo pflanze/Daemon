@@ -83,6 +83,7 @@ $socket->shutdown(1)
   or die "shutdown: $!";
 
 my $result= <$socket>;
+defined $result or die "missing reply";
 
 my ($exitcode)= $result=~ /^(\d+)$/
   or die "invalid reply '$result'";
