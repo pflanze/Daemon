@@ -4,23 +4,6 @@ use strict;
 use lib "/opt/Daemon";
 use Chj_library;
 
-use Time::HiRes 'time','sleep';
-
-sub uninterrupted_sleep ( $ ) {
-    my ($sleeptime)=@_;
-    my $end= time + $sleeptime;
-    while (1) {
-	my $diff= $end - time;
-	if ($diff > 0) {
-	    #warn "going to sleep for $diff";
-	    sleep $diff;
-	} else {
-	    last
-	}
-    }
-}
-# ^- todo: move to some lib, finally.
-
 
 our $sleeptime=1.0;
 our $maxchildren= 10;
