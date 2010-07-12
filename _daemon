@@ -107,6 +107,7 @@ eval {
 		# passing mechanism according to the settings
 
 		my $finish= sub {
+		    my ($pid)=@_;
 		    xwaitpid $pid, 0;
 		    my $exitcode= $?;
 		    warn "main process exited to $$, code $exitcode" if $DEBUG;
@@ -153,7 +154,7 @@ eval {
 			    }
 			});
 			xclose $w;
-			&$finish;
+			&$finish ($pid);
 		    } else {
 			xclose $w;
 			xdup2 $r, 0;
@@ -175,7 +176,7 @@ eval {
 		    pop @argv;
 
 		    if (my $pid= xfork) {
-			&$finish;
+			&$finish ($pid);
 		    } else {
 			warn "going to exec in $$, '$mainprogram'" if $DEBUG;
 			xexec "sh", "-c", $mainprogram, @argv;
