@@ -30,10 +30,10 @@ our $mainprogram= xenv "DAEMON_MAINPROGRAM";
 
 use IO::Socket::UNIX;
 
-if (defined $umask) {
-    umask oct($umask)
-      or die "umask: $!";
-}
+our $orig_umask= umask;
+
+umask 0600
+  or die "umask: $!";
 
 unlink $socketpath; #okay?  check for running daemons...
 our $socket= IO::Socket::UNIX->new
@@ -43,6 +43,23 @@ our $socket= IO::Socket::UNIX->new
    Listen=> 1,
   )
   or die "opening socket '$socketpath': $!";#!
+
+umask $orig_umask
+  or die "umask: $!";
+
+if (length $socket_group) {
+    my @s= stat $socketpath or die;
+    my $gid= getgrnam $socket_group
+      or die "unknown group '$socket_group'";
+    chown $s[4], $gid, $socketpath
+      or die "chown: $!";
+    chmod 0620, $socketpath
+      or die "chmod: $!";
+} else {
+    chmod 0622, $socketpath
+      or die "chmod: $!";
+}
+
 
 my $numchildren=0;
 
