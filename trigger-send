@@ -31,13 +31,6 @@ if (@ARGV==1 and ($ARGV[0] eq "-h" or
     usage
 }
 
-use Getopt::Long;
-our $verbose=0;
-GetOptions("verbose"=> \$verbose,
-	   "help"=> sub{usage},
-	   "timeout"=> \$timeout,
-	   ) or exit 1;
-
 our $timeout = do {
     if (defined $ENV{TIMEOUT}) {
 	$ENV{TIMEOUT}=~ /^(\d+)$/
