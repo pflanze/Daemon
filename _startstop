@@ -42,6 +42,9 @@ sub start {
 	    setsid
 	      or die $!;
 	    # chdir "/";
+	    open my $null, '+<', "/dev/null"
+	      or die "could not open /dev/null: $!";
+	    xdup2 $null, 0;
 	    # set up loggging and run daemon:
 	    pipe my $r, my $w
 	      or die $!;
@@ -55,6 +58,8 @@ sub start {
 		xclose $w;
 		xdup2 $r, 0;
 		xclose $r;
+		xdup2 $null, 1;
+		xdup2 $null, 2;
 		xexec "logger", "-t", $servicename
 	    }
 	}
