@@ -115,6 +115,7 @@ eval {
 		    exit 0;
 		} else {
 		    xclose $w;
+		    xdup2 $r, 0;
 		    xexec $mainprogram;
 		}
 	    }
