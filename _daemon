@@ -119,9 +119,19 @@ eval {
 		my $while_read_buf= sub {
 		    my ($send_buf)=@_;
 		    warn "reading connection in $$" if $DEBUG;
-		    while (read $conn, $buf, 2048) {
-			&$send_buf;
-		    }
+		    my $loop;
+		    my $end= sub {
+			undef $loop # (break reference cycle)
+		    };
+		    $loop= sub {
+			my $next=
+			  ((read $conn, $buf, 2048) ?
+			   &$send_buf($end, $loop)
+			   :
+			   $end);
+			goto $next;
+		    };
+		    &$loop;
 		    warn "finished reading in $$" if $DEBUG;
 		};
 		$SIG{CHLD}= 'DEFAULT'; # not IGNORE, correct?
@@ -133,13 +143,15 @@ eval {
 			xclose $r;
 			$SIG{PIPE}= 'IGNORE';
 			&$while_read_buf(sub {
+			    my ($stop,$continue)=@_;
 			    # don't die on errors
 			    # (esp. because we need to send the result afterwards)
-			    print $w $buf
-			      or do {
-				  warn "writing to pipe to main program: $!";
-				  last;
-			      };
+			    if (print $w $buf) {
+				$continue
+			    } else {
+				warn "writing to pipe to main program: $!";
+				$stop
+			    }
 			});
 			xclose $w;
 			&$finish;
@@ -154,7 +166,9 @@ eval {
 
 		    my $input="";
 		    &$while_read_buf(sub {
+			my ($stop,$continue)=@_;
 			$input.=$buf;
+			$continue
 		    });
 
 		    my @argv= split '\0', $input, -1;
