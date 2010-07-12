@@ -185,27 +185,6 @@ our $start_piped_handler= sub {
     }
 };
 
-sub maybe_parsemsg ( $ ) { # return vector of values, or false.
-    my ($str)=@_;
-    if ($opt_accept_arguments) {
-	if ($str=~ /^trigger(?::(.*))?/s) {
-	    if (my $args=$1) {
-		# split on tab, then deescape schemestring
-		[
-		 map {
-		     parse_schemestring($_)
-		 } split /\t/, $args
-		]
-	    } else {
-		[]  ## do not die if a non commandline containing msg is received? ok for now. maybe extend with a new option to be restrictive in future.
-	    }
- 	} else {
-	    undef
-	}
-    } else {
-	$str eq 'trigger' ? [] : undef
-    }
-}
 
 
 # --- main ----------------------------
