@@ -41,7 +41,8 @@ INSTALL
 
   In case you want to keep in in a different place, you'll have to
   adapt the paths referring to /opt/Daemon in the examples in the
-  'my-service' subdirectory.
+  'my-service' subdirectory, as well as the 'use lib "/opt/Daemon";'
+  lines in _startstop, _daemon and _sender
 
 
 CONFIGURE
