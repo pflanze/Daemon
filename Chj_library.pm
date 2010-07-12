@@ -83,4 +83,10 @@ sub xpipe {
 }
 
 
+sub xprint_to {
+    my $fh=shift;
+    print $fh @_
+      or die "printing to $fh: $!";##sigh sensible message?
+}
+
 1

@@ -110,7 +110,7 @@ eval {
 		    waitpid $pid, 0
 		      or die "waitpid $pid: $!";
 		    my $exitcode= $?;
-		    xprint $conn, $exitcode;
+		    xprint_to $conn, $exitcode;
 		    xclose $conn;
 		    exit 0;
 		} else {
