@@ -89,4 +89,12 @@ sub xprint_to {
       or croak "printing to $fh: $!";##sigh sensible message?
 }
 
+sub xwaitpid ( $ ; $ ) {
+    my ($pid,$flags)=@_;
+    defined $flags or $flags= 0;
+    my $kid= waitpid $pid,$flags;
+    croak "xwaitpid ($pid,$flags): no such child process" if $kid<0;
+    $kid
+}
+
 1

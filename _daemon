@@ -107,8 +107,7 @@ eval {
 		# passing mechanism according to the settings
 
 		my $finish= sub {
-		    waitpid $pid, 0
-		      or die "waitpid $pid: $!";
+		    xwaitpid $pid, 0;
 		    my $exitcode= $?;
 		    warn "main process exited to $$, code $exitcode" if $DEBUG;
 		    xprint_to $conn, $exitcode;
