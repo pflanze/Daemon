@@ -155,7 +155,7 @@ eval {
 			exit 0;
 		    } else {
 			warn "going to exec in $$, '$mainprogram'" if $DEBUG;
-			xexec $mainprogram, @argv;
+			xexec "sh", "-c", $mainprogram, @argv;
 		    }
 		}
 	    }
