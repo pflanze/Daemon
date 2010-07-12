@@ -132,23 +132,20 @@ eval {
 		    }
 		} else {
 		    # start main program process
-		    my ($r,$w)= xpipe;
+
+		    my $input="";
+		    my $buf;
+		    warn "copying connection in $$" if $DEBUG;
+		    while (read $conn, $buf, 2048) {
+			$input.=$buf;
+		    }
+		    warn "finished reading in $$" if $DEBUG;
+
+		    my @argv= split '\0', $input, -1;
+		    # pop off empty field after last zero byte
+		    pop @argv;
+
 		    if (my $pid= xfork) {
-			xclose $r;
-			my $buf;
-			$SIG{PIPE}= 'IGNORE';
-			warn "copying connection in $$" if $DEBUG;
-			while (read $conn, $buf, 2048) {
-			    # don't die on errors
-			    # (esp. because we need to send the result afterwards)
-			    print $w $buf
-			      or do {
-				  warn "writing to pipe to main program: $!";
-				  last;
-			      };
-			}
-			warn "finished writing to main process in $$" if $DEBUG;
-			xclose $w;
 			waitpid $pid, 0
 			  or die "waitpid $pid: $!";
 			my $exitcode= $?;
@@ -157,10 +154,8 @@ eval {
 			xclose $conn;
 			exit 0;
 		    } else {
-			xclose $w;
-			xdup2 $r, 0;
 			warn "going to exec in $$, '$mainprogram'" if $DEBUG;
-			xexec $mainprogram;
+			xexec $mainprogram, @argv;
 		    }
 		}
 	    }
