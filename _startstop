@@ -13,13 +13,13 @@ our $pidfile="$service_run_dir/$servicename.pid";
 our $lockfile="$service_run_dir/$servicename.lck";
 
 use Fcntl ':flock';
-use POSIX qw(setsid);
+use POSIX qw(setsid O_CREAT O_WRONLY);
 
 sub try_lock {
     # set up to get the close-on-exec flag cleared for the lockfh
     local $^F= 9999;
     # filehandle we will flock
-    open my $lockfh, ">", $lockfile
+    sysopen my $lockfh, $lockfile, O_CREAT|O_WRONLY, 0600
       or die $!;
     if (flock $lockfh, LOCK_EX|LOCK_NB) {
 	$lockfh
