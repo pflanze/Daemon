@@ -5,17 +5,15 @@ processes making up the daemon, running the my-service example:
 
 $ ps auxwwf
 ...
-root       429  0.0  0.0  10636  1276 ?        Ss   17:55   0:00 /bin/bash /opt/Daemon/_daemon
-root       430  0.0  0.0   5524   548 ?        S    17:55   0:00  \_ logger -t my-service
-root       431  0.0  0.0   5544   516 ?        S    17:55   0:00  \_ cat /var/run/my-service.fifo
-root       432  0.0  0.0  10636   468 ?        S    17:55   0:00  \_ /bin/bash /opt/Daemon/_daemon
+root      6568  0.0  0.1  28984  4744 ?        Ss   23:46   0:00 /usr/bin/perl -w /opt/Daemon/_daemon
+root      6569  0.0  0.0   5524   648 ?        S    23:46   0:00  \_ logger -t my-service
 ...
 
 All these 5 processes are a normal part of the daemon.
 
 If everything is normal, then you will get the following:
 
-novo:~# cat /var/run/Daemon.pid 
-429
+chris@novo:~/TEMP/Daemon$ cat /var/run/my-service.pid 
+6568
 
 The pid matching the first pid of the above.
