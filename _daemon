@@ -98,36 +98,70 @@ eval {
 		$numchildren++; ###btw race! (in the ++ itself) hehhe.
 	    } else {
 		$SIG{CHLD}= 'DEFAULT'; # not IGNORE, correct?
-		# start main program process
-		my ($r,$w)= xpipe;
-		if (my $pid= xfork) {
-		    xclose $r;
-		    my $buf;
-		    $SIG{PIPE}= 'IGNORE';
-		    warn "copying connection in $$" if $DEBUG;
-		    while (read $conn, $buf, 2048) {
-			# don't die on errors
-			# (esp. because we need to send the result afterwards)
-			print $w $buf
-			  or do {
-			      warn "writing to pipe to main program: $!";
-			      last;
-			  };
+		if (0) {
+		    # start main program process
+		    my ($r,$w)= xpipe;
+		    if (my $pid= xfork) {
+			xclose $r;
+			my $buf;
+			$SIG{PIPE}= 'IGNORE';
+			warn "copying connection in $$" if $DEBUG;
+			while (read $conn, $buf, 2048) {
+			    # don't die on errors
+			    # (esp. because we need to send the result afterwards)
+			    print $w $buf
+			      or do {
+				  warn "writing to pipe to main program: $!";
+				  last;
+			      };
+			}
+			warn "finished writing to main process in $$" if $DEBUG;
+			xclose $w;
+			waitpid $pid, 0
+			  or die "waitpid $pid: $!";
+			my $exitcode= $?;
+			warn "main process exited to $$, code $exitcode" if $DEBUG;
+			xprint_to $conn, $exitcode;
+			xclose $conn;
+			exit 0;
+		    } else {
+			xclose $w;
+			xdup2 $r, 0;
+			warn "going to exec in $$, '$mainprogram'" if $DEBUG;
+			xexec $mainprogram;
 		    }
-		    warn "finished writing to main process in $$" if $DEBUG;
-		    xclose $w;
-		    waitpid $pid, 0
-		      or die "waitpid $pid: $!";
-		    my $exitcode= $?;
-		    warn "main process exited to $$, code $exitcode" if $DEBUG;
-		    xprint_to $conn, $exitcode;
-		    xclose $conn;
-		    exit 0;
 		} else {
-		    xclose $w;
-		    xdup2 $r, 0;
-		    warn "going to exec in $$, '$mainprogram'" if $DEBUG;
-		    xexec $mainprogram;
+		    # start main program process
+		    my ($r,$w)= xpipe;
+		    if (my $pid= xfork) {
+			xclose $r;
+			my $buf;
+			$SIG{PIPE}= 'IGNORE';
+			warn "copying connection in $$" if $DEBUG;
+			while (read $conn, $buf, 2048) {
+			    # don't die on errors
+			    # (esp. because we need to send the result afterwards)
+			    print $w $buf
+			      or do {
+				  warn "writing to pipe to main program: $!";
+				  last;
+			      };
+			}
+			warn "finished writing to main process in $$" if $DEBUG;
+			xclose $w;
+			waitpid $pid, 0
+			  or die "waitpid $pid: $!";
+			my $exitcode= $?;
+			warn "main process exited to $$, code $exitcode" if $DEBUG;
+			xprint_to $conn, $exitcode;
+			xclose $conn;
+			exit 0;
+		    } else {
+			xclose $w;
+			xdup2 $r, 0;
+			warn "going to exec in $$, '$mainprogram'" if $DEBUG;
+			xexec $mainprogram;
+		    }
 		}
 	    }
 	} else {
