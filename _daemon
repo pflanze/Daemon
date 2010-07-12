@@ -115,6 +115,15 @@ eval {
 		    xclose $conn;
 		    exit 0;
 		};
+		my $buf;
+		my $while_read_buf= sub {
+		    my ($send_buf)=@_;
+		    warn "reading connection in $$" if $DEBUG;
+		    while (read $conn, $buf, 2048) {
+			&$send_buf;
+		    }
+		    warn "finished reading in $$" if $DEBUG;
+		};
 		$SIG{CHLD}= 'DEFAULT'; # not IGNORE, correct?
 		if ($mainprogram_stdin) {
 		    my $mainprogram= $mainprogram_stdin;
@@ -122,10 +131,8 @@ eval {
 		    my ($r,$w)= xpipe;
 		    if (my $pid= xfork) {
 			xclose $r;
-			my $buf;
 			$SIG{PIPE}= 'IGNORE';
-			warn "copying connection in $$" if $DEBUG;
-			while (read $conn, $buf, 2048) {
+			&$while_read_buf(sub {
 			    # don't die on errors
 			    # (esp. because we need to send the result afterwards)
 			    print $w $buf
@@ -133,8 +140,7 @@ eval {
 				  warn "writing to pipe to main program: $!";
 				  last;
 			      };
-			}
-			warn "finished writing to main process in $$" if $DEBUG;
+			});
 			xclose $w;
 			&$finish;
 		    } else {
@@ -147,12 +153,9 @@ eval {
 		    my $mainprogram= $mainprogram_argv;
 
 		    my $input="";
-		    my $buf;
-		    warn "reading connection in $$" if $DEBUG;
-		    while (read $conn, $buf, 2048) {
+		    &$while_read_buf(sub {
 			$input.=$buf;
-		    }
-		    warn "finished reading in $$" if $DEBUG;
+		    });
 
 		    my @argv= split '\0', $input, -1;
 		    # pop off empty field after last zero byte
