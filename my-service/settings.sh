@@ -37,3 +37,6 @@ export DAEMON_MAINPROGRAM_ARGV='perl -we '\''for(@ARGV){print "arg: [$_]\n"}'\''
 # read access by any user on the system. For security sensitive data
 # use DAEMON_MAINPROGRAM_STDIN instead, and use the MESSAGE env var to
 # feed data to the '_sender' program.
+# Also be very careful not to forget double quotes around argument
+# variable references to prevent the shell from evaluating the
+# contents! Forget them and you've got a security hole.
