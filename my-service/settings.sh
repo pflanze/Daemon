@@ -28,4 +28,4 @@ export DAEMON_SOCKET_GROUP=""
 # *a line of text*) is received over the fifo; the message being
 # offered on the program's stdin.
 # DAEMON_MAINPROGRAM will be passed to sh -c
-export DAEMON_MAINPROGRAM="perl -wne 's/\0/(nullbyte)/sg; print'; echo"
+export DAEMON_MAINPROGRAM="/bin/echo"
