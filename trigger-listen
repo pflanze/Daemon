@@ -211,22 +211,26 @@ eval {
 		warn "forked off child $pid" if $DEBUG;
 		$numchildren++; ###btw race! (in the ++ itself) hehhe.
 	    } else {
-		while (<$conn>) {
-		    chomp;
-		    if (maybe_parsemsg($_)) {
-			warn "$$ got trigger" if $DEBUG;
-			&$pass_to_handler($_);
-			$conn->send("ok\n")
-			  or warn "$myname: $$ could not send ok back to sender: $!";
-			#(btw of course the ok doesn't mean that the cmd has been run successfully or already in any way)
-			warn "$$ sent ok back to trigger-send" if $DEBUG;
-		    } else {
-			warn "$$ got unrecognized message '$_'" if $DEBUG;
-			$conn->send("unrecognized message (need --accept-arguments?)\n")
-			  or warn "$myname: $$ could not send ok back to sender: $!";
+		# start main program process
+		my ($r,$w)= xpipe;
+		if (my $pid= xfork) {
+		    xclose $r;
+		    my $buf;
+		    while (read $conn, $buf, 2048) {
+			print $w $buf
+			  or die "writing to pipe to main program: $!"; ##todo SIGPIPE?  or  fork off handler first.
 		    }
+		    xclose $w;
+		    waitpid $pid, 0
+		      or die "waitpid $pid: $!";
+		    my $exitcode= $?;
+		    xprint $conn, $exitcode;
+		    xclose $conn;
+		    exit 0;
+		} else {
+		    xclose $w;
+		    xexec $daemon;
 		}
-		exit 0;
 	    }
 	} else {
 	    warn "$myname: too many children, dropping connection\n";##from ...
