@@ -1,9 +1,87 @@
-#!/bin/bash
+#!/usr/bin/perl -w
 
-# To be run as non-root user,
-# after setting the DAEMON_FIFO env variable
+use strict;
 
-set -eu
+our $default_timeout=10;
 
-echo "run!" > "$DAEMON_FIFO"
+$0=~ /(.*?)([^\/]+)\z/s or die "?";
+my ($mydir, $myname)=($1,$2);
+sub usage {
+    print STDERR map{"$_\n"} @_ if @_;
+    print "$myname [ arguments ]
+
+  Ask the daemon listening at DAEMON_SOCKET to run its main program,
+  passing arguments to it, unless the MESSAGE env var is set, in which
+  case its contents is sent instead.
+
+  Exit with the exit code of the main program, or if it was killed,
+  report the signal and exit with an error code.
+
+  Environment variables:
+   required:
+    DAEMON_SOCKET   path to communication socket
+
+   optional:
+    TIMEOUT   connect timeout in seconds, instead of the default $default_timeout
+
+";
+exit (@_ ? 1 : 0);
+}
+
+if (@ARGV==1 and ($ARGV[0] eq "-h" or
+		  $ARGV[0] eq "--help")) {
+    usage
+}
+
+our $timeout = do {
+    if (defined $ENV{TIMEOUT}) {
+	$ENV{TIMEOUT}=~ /^(\d+)$/
+	  or die "invalid TIMEOUT variable '$ENV{TIMEOUT}'";
+	$1
+    } else {
+	$default_timeout
+    }
+};
+
+our $socketpath= $ENV{DAEMON_SOCKET}
+  or die "missing environment variable DAEMON_SOCKET";
+
+use IO::Socket::UNIX;
+
+$SIG{ALRM}= sub {
+    die "$myname on '$socketpath': timed out\n";
+};
+alarm $timeout;
+
+our $socket= IO::Socket::UNIX->new
+  (
+   Type=> SOCK_STREAM,
+   Peer=> $socketpath,
+  )
+  or die "opening socket '$socketpath': $!";#!
+
+$socket->send(do {
+    if (defined $ENV{MESSAGE}) {
+	die "both MESSAGE env var set and commandline arguments given"
+	  if @ARGV;
+	$ENV{MESSAGE}
+    } else {
+	join("\0", @ARGV)
+    }
+})
+  or die "send: $!";
+
+my $result= <$socket>;
+
+my ($exitcode)= $result=~ /^(\d+)$/
+  or die "invalid reply";
+
+$socket->close
+  or die "close: $!";
+
+if ($exitcode==0 or $exitcode > 255) {
+    exit ($exitcode << 8);
+} else {
+    die "$myname: remote process died with signal $exitcode\n";
+}
 
