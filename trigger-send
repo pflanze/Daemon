@@ -11,9 +11,11 @@ sub usage {
     print "$myname [ arguments ]
 
   Ask the daemon listening at DAEMON_SOCKET to run its main program,
-  passing arguments to it. Exit with the exit code of the main
-  program, or if it was killed, report the signal and exit with an
-  error code.
+  passing arguments to it, unless the MESSAGE env var is set, in which
+  case its contents is sent instead.
+
+  Exit with the exit code of the main program, or if it was killed,
+  report the signal and exit with an error code.
 
   Environment variables:
    required:
@@ -58,7 +60,15 @@ our $socket= IO::Socket::UNIX->new
   )
   or die "opening socket '$socketpath': $!";#!
 
-$socket->send(join("\0", @ARGV))
+$socket->send(do {
+    if (defined $ENV{MESSAGE}) {
+	die "both MESSAGE env var set and commandline arguments given"
+	  if @ARGV;
+	$ENV{MESSAGE}
+    } else {
+	join("\0", @ARGV)
+    }
+})
   or die "send: $!";
 
 my $result= <$socket>;
