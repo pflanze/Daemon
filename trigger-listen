@@ -13,6 +13,10 @@ sub usage {
     print STDERR map{"$_\n"} @_ if @_;
     print "$myname
 
+  Requires the DAEMON_SOCKET, DAEMON_SOCKET_GROUP, DAEMON_MAINPROGRAM
+  env vars to be set.
+
+  Optionally accepts DEBUG env var as boolean.
 
 ";
 exit (@_ ? 1 : 0);
@@ -20,8 +24,9 @@ exit (@_ ? 1 : 0);
 
 usage if @ARGV;
 our $DEBUG= $ENV{DEBUG};
-our $socketpath= $ENV{DAEMON_SOCKET}
-  or die "missing environment variable DAEMON_SOCKET";
+our $socketpath= xenv "DAEMON_SOCKET";
+our $socket_group= xenv "DAEMON_SOCKET_GROUP";
+our $mainprogram= xenv "DAEMON_MAINPROGRAM";
 
 use IO::Socket::UNIX;
 
@@ -93,7 +98,7 @@ eval {
 		    exit 0;
 		} else {
 		    xclose $w;
-		    xexec $daemon;
+		    xexec $mainprogram;
 		}
 	    }
 	} else {
