@@ -33,3 +33,7 @@ export DAEMON_SOCKET_GROUP=""
 #export DAEMON_MAINPROGRAM_STDIN="perl -wne 's/\0/(nullbyte)/sg; print'; echo"
 
 export DAEMON_MAINPROGRAM_ARGV='perl -we '\''for(@ARGV){print "arg: [$_]\n"}'\'' a b c "$@" z'
+# **NOTE**: passing data as program arguments is not protected from
+# read access by any user on the system. For security sensitive data
+# use DAEMON_MAINPROGRAM_STDIN instead, and use the MESSAGE env var to
+# feed data to the '_sender' program.
