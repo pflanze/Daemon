@@ -1,0 +1,269 @@
+#!/usr/bin/perl -w
+
+# Mit Feb 13 13:22:44 CET 2008
+(my $email='chrjae%gmail,com')=~ tr/%,/@./;
+
+use strict;
+use Time::HiRes 'time','sleep';
+
+sub uninterrupted_sleep ( $ ) {
+    my ($sleeptime)=@_;
+    my $end= time + $sleeptime;
+    while (1) {
+	my $diff= $end - time;
+	if ($diff > 0) {
+	    #warn "going to sleep for $diff";
+	    sleep $diff;
+	} else {
+	    last
+	}
+    }
+}
+# ^- todo: move to some lib, finally.
+
+
+our $sleeptime=1.0;
+our $maxchildren= 10;
+
+$0=~ /(.*?)([^\/]+)\z/s or die "?";
+my ($mydir, $myname)=($1,$2);
+sub usage {
+    print STDERR map{"$_\n"} @_ if @_;
+    print "$myname socketpath cmd [arguments]
+
+  Listens on socketpath, and expects senders to print a 'trigger'
+  line, and when that happens, after waiting for --sleep seconds
+  ($sleeptime by default), runs the given cmd / arguments. If new
+  triggers are being issued before the cmd finishes, it is being run
+  again (thus no triggers are being missed).
+
+  Options:
+  --sleep n    sleep n instead of $sleeptime  (I don't remember the
+               use of the sleeptime right now)
+  --umask val  use umask instead of the current one (relevant for
+               creating the socket file)
+  --accept-arguments  instead of just the trigger message, accept
+               messages with a list of strings encoded in them, which
+               are then passed as additional arguments to cmd.
+               Switches to piped handler, which does not have the
+               property of running only once if before starting a run
+               multiple triggers have been given, but instead runs as
+               many times as triggers have been sent, but still
+               serialized. Also switches off sleeping.
+
+  (Christian Jaeger <$email>)
+";
+exit (@_ ? 1 : 0);
+}
+
+use Getopt::Long;
+our $verbose=0;
+our $DEBUG;
+our $umask;
+our $opt_accept_arguments;
+our $opt_sleeptime;
+GetOptions("verbose"=> \$verbose,
+	   "help"=> sub{usage},
+	   "sleeptime=s"=> \$opt_sleeptime,
+	   "debug"=> \$DEBUG,
+	   "umask=s"=> \$umask,
+	   "accept-arguments"=>\$opt_accept_arguments,
+	   ) or exit 1;
+usage unless @ARGV >= 2;
+$DEBUG||=$verbose;
+our $socketpath= shift @ARGV;
+our @cmd= @ARGV;
+if ($opt_accept_arguments and $opt_sleeptime) {
+    usage "--accept-arguments is incompatible with --sleep"
+}
+$sleeptime= $opt_sleeptime if defined $opt_sleeptime;
+
+use IO::Socket::UNIX;
+
+if (defined $umask) {
+    umask oct($umask)
+      or die "umask: $!";
+}
+
+unlink $socketpath; #okay?  check for running daemons...
+our $socket= IO::Socket::UNIX->new
+  (
+   Type=> SOCK_STREAM,
+   Local=> $socketpath,
+   Listen=> 1,
+  )
+  or die "opening socket '$socketpath': $!";#!
+
+use Chj::xperlfunc;
+
+my $numchildren=0;
+
+use POSIX ":sys_wait_h"; # WNOHANG
+
+my $runner_child=-2;
+
+$SIG{CHLD}= do {
+    my $pid;
+    sub {
+	while (1) {
+	    $pid= waitpid -1,WNOHANG;
+	    last if (($pid == -1) or ($pid == 0)); #GRR somehow mis documented??!
+	    $numchildren--;
+	    if ($pid == $runner_child) {
+		die "runner_child died";
+	    }
+	}
+    };
+};
+
+# handler which is not lossy (as I thought), but just does stuff once,
+# being triggered, and has a call frequency limit:
+
+our $start_triggered_handler = sub {
+    if ($runner_child= xfork) {
+	# sender:
+	sub {
+	    if (kill "USR1", $runner_child) {
+		warn "$$ sent signal to runner_child" if $DEBUG;
+	    } else {
+		die "$myname ($$): could not send signal to runner_child: $!"; ## currently just die since we don't restart the runner_child
+	    }
+	}
+    } else {
+	my $flag=0;
+	$SIG{USR1}= sub {
+	    warn "runner_child got signal" if $DEBUG;
+	    $flag=1;
+	};
+	while (1) {
+	    # use both interruptible and uninterruptible sleeps hehe
+	    sleep 100000;
+	    if ($flag) {
+	      RUNIT: {
+		    warn "runner_child got request to run command" if $DEBUG;
+		    uninterrupted_sleep $sleeptime;
+		    warn "runner_child going to run command now" if $DEBUG;
+		    $flag=0;
+		    my $res= xsystem @cmd;
+		    ## todo: print if there was a problem  ?
+		    if ($flag) {
+			redo RUNIT;
+		    }
+		}
+	    } else {
+		warn "(runner_child: sleep timed out)" if $DEBUG;
+	    }
+	}
+    }
+};
+
+# handler which is just serial, but runs as many times as 'signalled',
+# without frequency limit, but also can handle arguments:
+
+use Chj::xpipe;
+
+our $start_piped_handler= sub {
+    my ($in,$send)=xpipe;
+    if ($runner_child= xfork) {
+	$in->xclose;
+	# sender:
+	sub {
+	    my ($msg)=@_;
+	    # msg does not end in newline anymore
+	    $send->xprint($msg,"\n");
+	    $send->xflush;
+	    warn "$$ passed on message to runner_child" if $DEBUG;
+	}
+    } else {
+	$send->xclose;
+	while (<$in>) {
+	    chomp;
+	    if (my $args= maybe_parsemsg ($_)) {
+		warn "runner_child got request to run command" if $DEBUG;
+		my $res= xsystem @cmd,@$args;
+		## todo: print if there was a problem  ?
+	    } else {
+		die "piped_handler: got strange message '$_'";
+	    }
+	}
+	exit 1;
+    }
+};
+
+use Chj::schemestring 'parse_schemestring';
+sub maybe_parsemsg ( $ ) { # return vector of values, or false.
+    my ($str)=@_;
+    if ($opt_accept_arguments) {
+	if ($str=~ /^trigger(?::(.*))?/s) {
+	    if (my $args=$1) {
+		# split on tab, then deescape schemestring
+		[
+		 map {
+		     parse_schemestring($_)
+		 } split /\t/, $args
+		]
+	    } else {
+		[]  ## do not die if a non commandline containing msg is received? ok for now. maybe extend with a new option to be restrictive in future.
+	    }
+ 	} else {
+	    undef
+	}
+    } else {
+	$str eq 'trigger' ? [] : undef
+    }
+}
+
+
+# --- main ----------------------------
+
+our $pass_to_handler= &{ $opt_accept_arguments ?
+			   $start_piped_handler
+			     : $start_triggered_handler };
+
+eval {
+    while(1) {
+	my $conn= $socket->accept
+	  or do {
+	      if ($! == 4) {## get constant from POSIX ~
+		  # OS error code   4:  Interrupted system call
+		  redo
+	      } else {
+		  die "accept: $!";
+	      }
+	  };
+	warn "got a connection from ".$conn->peername if $DEBUG;###todo convert to a human-readable something.
+	if ($numchildren < $maxchildren) {
+	    if (my $pid= xfork) {
+		undef $conn;
+		warn "forked off child $pid" if $DEBUG;
+		$numchildren++; ###btw race! (in the ++ itself) hehhe.
+	    } else {
+		while (<$conn>) {
+		    chomp;
+		    if (maybe_parsemsg($_)) {
+			warn "$$ got trigger" if $DEBUG;
+			&$pass_to_handler($_);
+			$conn->send("ok\n")
+			  or warn "$myname: $$ could not send ok back to sender: $!";
+			#(btw of course the ok doesn't mean that the cmd has been run successfully or already in any way)
+			warn "$$ sent ok back to trigger-send" if $DEBUG;
+		    } else {
+			warn "$$ got unrecognized message '$_'" if $DEBUG;
+			$conn->send("unrecognized message (need --accept-arguments?)\n")
+			  or warn "$myname: $$ could not send ok back to sender: $!";
+		    }
+		}
+		exit 0;
+	    }
+	} else {
+	    warn "$myname: too many children, dropping connection\n";##from ...
+	}
+	warn "going to accept again" if $DEBUG;
+    }
+};
+my $e=$@;
+kill 9, $runner_child;
+die $e;
+
+#use Chj::ruse;
+#use Chj::Backtrace; use Chj::repl; repl;
