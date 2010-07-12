@@ -5,6 +5,8 @@ use lib "/opt/Daemon";
 use Chj_library;
 
 
+our $bufsize= 4096; # bytes
+our $default_maxmessagesize= 100; # number of buffers of $bufsize
 our $maxchildren= 10;
 
 $0=~ /(.*?)([^\/]+)\z/s or die "?";
@@ -16,7 +18,12 @@ sub usage {
   Requires the DAEMON_SOCKET, DAEMON_SOCKET_GROUP, DAEMON_MAINPROGRAM
   env vars to be set.
 
-  Optionally accepts DEBUG env var as boolean.
+  Optionally accepts the environment variables:
+
+    DEBUG as boolean
+
+    DAEMON_MAXMESSAGESIZE (number of buffers of $bufsize bytes) to
+    override the default of $default_maxmessagesize
 
 ";
 exit (@_ ? 1 : 0);
@@ -28,6 +35,7 @@ our $socketpath= xenv "DAEMON_SOCKET";
 our $socket_group= xenv "DAEMON_SOCKET_GROUP";
 our $mainprogram_stdin= $ENV{DAEMON_MAINPROGRAM_STDIN};
 our $mainprogram_argv= $ENV{DAEMON_MAINPROGRAM_ARGV};
+our $maxmessagesize = $ENV{DAEMON_MAXMESSAGESIZE} || $default_maxmessagesize;
 
 usage "only one of DAEMON_MAINPROGRAM_STDIN or DAEMON_MAINPROGRAM_ARGV can be given"
   if ($mainprogram_stdin and $mainprogram_argv);
@@ -106,29 +114,54 @@ eval {
 		# start main program process; choose the right data
 		# passing mechanism according to the settings
 
+		# regular finish:
 		my $finish= sub {
 		    my ($pid)=@_;
 		    xwaitpid $pid, 0;
 		    my $exitcode= $?;
 		    warn "main process exited to $$, code $exitcode" if $DEBUG;
-		    xprint_to $conn, $exitcode;
+		    xprint_to $conn, "ok: $exitcode";
 		    xclose $conn;
 		    exit 0;
 		};
+		# abortive finish:
+		my $abort_with_cleanup= sub {
+		    my ($cleanup)=@_;
+		    sub {
+			warn "max message size has been exceeded, aborting (in daemon child $$)";
+			&$cleanup;
+			# don't care about child exit status.
+			# but should we wait for it anyway? maybe a good idea.
+			xwaitpid $pid, 0;
+			# send error to client:
+			xprint_to $conn, "err: message too big";
+			xclose $conn;
+			# (success exit code since we are ok, the
+			# error has been sent to the right place
+			# already: )
+			exit 0;
+		    }
+		};
 		my $buf;
 		my $while_read_buf= sub {
-		    my ($send_buf)=@_;
+		    @_==2 or die;
+		    my ($send_buf,$abort)=@_;
 		    warn "reading connection in $$" if $DEBUG;
 		    my $loop;
 		    my $end= sub {
 			undef $loop # (break reference cycle)
 		    };
+		    my $n=0;
 		    $loop= sub {
+			$n++;
 			my $next=
-			  ((read $conn, $buf, 2048) ?
-			   &$send_buf($end, $loop)
-			   :
-			   $end);
+			   (($n < $maxmessagesize) ?
+			    ((read $conn, $buf, $bufsize) ?
+			     &$send_buf($end, $loop)
+			     :
+			     $end)
+			    :
+			    $abort);
 			goto $next;
 		    };
 		    &$loop;
@@ -142,17 +175,29 @@ eval {
 		    if (my $pid= xfork) {
 			xclose $r;
 			$SIG{PIPE}= 'IGNORE';
-			&$while_read_buf(sub {
-			    my ($stop,$continue)=@_;
-			    # don't die on errors
-			    # (esp. because we need to send the result afterwards)
-			    if (print $w $buf) {
-				$continue
-			    } else {
-				warn "writing to pipe to main program: $!";
-				$stop
-			    }
-			});
+			&$while_read_buf
+			  (sub {
+			       my ($stop,$continue)=@_;
+			       # don't die on errors
+			       # (esp. because we need to send the result afterwards)
+			       if (print $w $buf) {
+				   $continue
+			       } else {
+				   warn "writing to pipe to main program: $!";
+				   $stop
+			       }
+			   },
+			   &$abort_with_cleanup
+			   (sub {
+				# in case of abort, kill the child
+				# (the child is not a process group
+				# leader; running setsid in the child
+				# would be a bad idea because that would
+				# prevent individual mainprogram
+				# invocations from being killed by
+				# _startstop; or would that be ok?)
+				kill 2, $pid
+			    }));
 			xclose $w;
 			&$finish ($pid);
 		    } else {
@@ -165,11 +210,17 @@ eval {
 		    my $mainprogram= $mainprogram_argv;
 
 		    my $input="";
-		    &$while_read_buf(sub {
-			my ($stop,$continue)=@_;
-			$input.=$buf;
-			$continue
-		    });
+		    &$while_read_buf
+		      (sub {
+			   my ($stop,$continue)=@_;
+			   $input.=$buf;
+			   $continue
+		       },
+		       &$abort_with_cleanup
+		       (sub {
+			    # in case of abort, just let it exit, we
+			    # haven't started $mainprogram yet
+			}));
 
 		    my @argv= split '\0', $input, -1;
 		    # pop off empty field after last zero byte
