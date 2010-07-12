@@ -17,12 +17,12 @@ export SERVICE_DAEMON=/opt/Daemon/_daemon
 
 # daemon settings:
 
-export DAEMON_FIFO=/var/run/"$SERVICE_NAME".fifo
+export DAEMON_SOCKET=/var/run/"$SERVICE_NAME".fifo
 
-# For DAEMON_FIFO_GROUP, "" means world writable! To close it down,
+# For DAEMON_SOCKET_GROUP, "" means world writable! To close it down,
 # set to a group name. You have to remove the fifo (file at
-# DAEMON_FIFO) if you change this setting for it to have an effect.
-export DAEMON_FIFO_GROUP=""
+# DAEMON_SOCKET) if you change this setting for it to have an effect.
+export DAEMON_SOCKET_GROUP=""
 
 # DAEMON_MAINPROGRAM will be run each time a message (more precisely,
 # *a line of text*) is received over the fifo; the message being
