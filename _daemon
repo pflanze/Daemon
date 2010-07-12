@@ -97,14 +97,21 @@ eval {
 		warn "forked off child $pid" if $DEBUG;
 		$numchildren++; ###btw race! (in the ++ itself) hehhe.
 	    } else {
+		$SIG{CHLD}= 'DEFAULT'; # not IGNORE, correct?
 		# start main program process
 		my ($r,$w)= xpipe;
 		if (my $pid= xfork) {
 		    xclose $r;
 		    my $buf;
+		    $SIG{PIPE}= 'IGNORE';
 		    while (read $conn, $buf, 2048) {
+			# don't die on errors
+			# (esp. because we need to send the result afterwards)
 			print $w $buf
-			  or die "writing to pipe to main program: $!"; ##todo SIGPIPE?  or  fork off handler first.
+			  or do {
+			      warn "writing to pipe to main program: $!";
+			      last;
+			  };
 		    }
 		    xclose $w;
 		    waitpid $pid, 0
