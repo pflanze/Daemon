@@ -62,6 +62,25 @@ sub xdup2 {
     }
 }
 
+use Carp;
+
+sub xsystem {
+    @_>0 or croak "xsystem: missing arguments";
+    no warnings;
+    (system @_)>=0
+      or croak "xsystem: could not start command '$_[0]': $!";
+    $?
+}
+
+
+sub xpipe {
+    if (@_) {
+	confess "form with arguments not yet supported";
+    } else {
+	pipe my $r,my $w or croak "xpipe: $!";
+	($r,$w)
+    }
+}
 
 
 1

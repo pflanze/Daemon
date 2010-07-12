@@ -1,6 +1,9 @@
 #!/usr/bin/perl -w
 
 use strict;
+use lib "/opt/Daemon";
+use Chj_library;
+
 use Time::HiRes 'time','sleep';
 
 sub uninterrupted_sleep ( $ ) {
