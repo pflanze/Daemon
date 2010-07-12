@@ -60,16 +60,24 @@ our $socket= IO::Socket::UNIX->new
   )
   or die "opening socket '$socketpath': $!";#!
 
-$socket->send(do {
+my $msglen;
+
+my $len= $socket->send(do {
     if (defined $ENV{MESSAGE}) {
 	die "both MESSAGE env var set and commandline arguments given"
 	  if @ARGV;
+	$msglen= length ($ENV{MESSAGE});
 	$ENV{MESSAGE}
     } else {
-	join("", map { "$_\0" } @ARGV)
+	my $msg= join("", map { "$_\0" } @ARGV);
+	$msglen= length ($msg);
+	$msg
     }
-})
+});
+defined $len
   or die "send: $!";
+
+$len == $msglen or die "XXX: TODO send all pieces";
 
 my $result= <$socket>;
 
