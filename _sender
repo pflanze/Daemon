@@ -79,6 +79,9 @@ defined $len
 
 $len == $msglen or die "XXX: TODO send all pieces";
 
+$socket->shutdown(1)
+  or die "shutdown: $!";
+
 my $result= <$socket>;
 
 my ($exitcode)= $result=~ /^(\d+)$/
