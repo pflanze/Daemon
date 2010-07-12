@@ -85,7 +85,7 @@ $socket->shutdown(1)
 my $result= <$socket>;
 
 my ($exitcode)= $result=~ /^(\d+)$/
-  or die "invalid reply";
+  or die "invalid reply '$result'";
 
 $socket->close
   or die "close: $!";
