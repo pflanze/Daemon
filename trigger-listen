@@ -1,8 +1,5 @@
 #!/usr/bin/perl -w
 
-# Mit Feb 13 13:22:44 CET 2008
-(my $email='chrjae%gmail,com')=~ tr/%,/@./;
-
 use strict;
 use Time::HiRes 'time','sleep';
 
@@ -51,7 +48,6 @@ sub usage {
                many times as triggers have been sent, but still
                serialized. Also switches off sleeping.
 
-  (Christian Jaeger <$email>)
 ";
 exit (@_ ? 1 : 0);
 }
