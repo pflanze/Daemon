@@ -26,7 +26,13 @@ usage if @ARGV;
 our $DEBUG= $ENV{DEBUG};
 our $socketpath= xenv "DAEMON_SOCKET";
 our $socket_group= xenv "DAEMON_SOCKET_GROUP";
-our $mainprogram= xenv "DAEMON_MAINPROGRAM";
+our $mainprogram_stdin= $ENV{DAEMON_MAINPROGRAM_STDIN};
+our $mainprogram_argv= $ENV{DAEMON_MAINPROGRAM_ARGV};
+
+usage "only one of DAEMON_MAINPROGRAM_STDIN or DAEMON_MAINPROGRAM_ARGV can be given"
+  if ($mainprogram_stdin and $mainprogram_argv);
+usage "one of DAEMON_MAINPROGRAM_STDIN or DAEMON_MAINPROGRAM_ARGV must be given"
+  unless ($mainprogram_stdin or $mainprogram_argv);
 
 use IO::Socket::UNIX;
 
@@ -98,7 +104,8 @@ eval {
 		$numchildren++; ###btw race! (in the ++ itself) hehhe.
 	    } else {
 		$SIG{CHLD}= 'DEFAULT'; # not IGNORE, correct?
-		if (0) {
+		if ($mainprogram_stdin) {
+		    my $mainprogram= $mainprogram_stdin;
 		    # start main program process
 		    my ($r,$w)= xpipe;
 		    if (my $pid= xfork) {
@@ -131,6 +138,7 @@ eval {
 			xexec $mainprogram;
 		    }
 		} else {
+		    my $mainprogram= $mainprogram_argv;
 		    # start main program process
 
 		    my $input="";

@@ -24,8 +24,12 @@ export DAEMON_SOCKET=/var/run/"$SERVICE_NAME".fifo
 # DAEMON_SOCKET) if you change this setting for it to have an effect.
 export DAEMON_SOCKET_GROUP=""
 
-# DAEMON_MAINPROGRAM will be run each time a message (more precisely,
-# *a line of text*) is received over the fifo; the message being
-# offered on the program's stdin.
-# DAEMON_MAINPROGRAM will be passed to sh -c
-export DAEMON_MAINPROGRAM='perl -we '\''for(@ARGV){print "arg: [$_]\n"}'\'' a b c "$@" z'
+# DAEMON_MAINPROGRAM_* will be run each time a message is received;
+# the contents of these variables are passed to a shell (sh -c).  Set
+# *one* of these variables only. The difference is that for the first
+# variable the message is presented on stdin, for the second as argv
+# to the shell running the variable (get the values from "$@").
+
+#export DAEMON_MAINPROGRAM_STDIN="perl -wne 's/\0/(nullbyte)/sg; print'; echo"
+
+export DAEMON_MAINPROGRAM_ARGV='perl -we '\''for(@ARGV){print "arg: [$_]\n"}'\'' a b c "$@" z'
