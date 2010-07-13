@@ -96,19 +96,23 @@ $SIG{CHLD}= do {
     while(1) {
 	my $conn= $socket->accept
 	  or do {
-	      if ($! == 4) {## get constant from POSIX ~
+	      if ($! == 4) {# XX: get constant from POSIX instead
 		  # OS error code   4:  Interrupted system call
 		  redo
 	      } else {
 		  die "accept: $!";
 	      }
 	  };
-	warn "got a connection from ".$conn->peername if $DEBUG;###todo convert to a human-readable something.
+	warn "got a connection from ".$conn->peername if $DEBUG;
+	# ^ XX: convert to a human-readable string
 	if ($numchildren < $maxchildren) {
 	    if (my $pid= xfork) {
 		undef $conn;
 		warn "forked off child $pid" if $DEBUG;
-		$numchildren++; ###btw race! (in the ++ itself) hehhe.
+		$numchildren++;
+		#^ XX: is there is a race (in the ++ itself) even with
+		# Perl's safe signal handling?  In any case not very
+		# likely, and the worst case is a DoS.
 	    } else {
 		# start main program process; choose the right data
 		# passing mechanism according to the settings
@@ -177,8 +181,11 @@ $SIG{CHLD}= do {
 			&$while_read_buf
 			  (sub {
 			       my ($stop,$continue)=@_;
-			       # don't die on errors
-			       # (esp. because we need to send the result afterwards)
+			       # we don't die on errors, but signal
+			       # $stop explicitely (capturing
+			       # exceptions would be an alternative
+			       # but I don't like examining exception
+			       # texts to determine what happened)
 			       if (print $w $buf) {
 				   $continue
 			       } else {
@@ -217,12 +224,14 @@ $SIG{CHLD}= do {
 		       },
 		       &$abort_with_cleanup
 		       (sub {
-			    # in case of abort, just let it exit, we
-			    # haven't started $mainprogram yet
+			    # just let it exit, we haven't started
+			    # $mainprogram yet
 			}));
 
+		    # make sure empty arguments are not dropped, by
+		    # requesting the field after the trailing marker,
+		    # then popping it off
 		    my @argv= split '\0', $input, -1;
-		    # pop off empty field after last zero byte
 		    pop @argv;
 
 		    if (my $pid= xfork) {
