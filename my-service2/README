@@ -1,0 +1,2 @@
+This shows how to use a small perl script to do input sanitation
+before passing user input to another command ('echo' in this example).
