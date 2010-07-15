@@ -91,7 +91,7 @@ while(1) {
 	    $SIG{PIPE}= 'IGNORE';
 
 	    my $buf;
-	    warn "reading connection in $$" if $DEBUG;
+	    warn "reading connection" if $DEBUG;
 	    my $n=0;
 	  LOOP: {
 		$n++;
@@ -108,11 +108,11 @@ while(1) {
 			    last LOOP;
 			}
 		    } else {
-			warn "finished reading in $$" if $DEBUG;
+			warn "finished reading" if $DEBUG;
 			last LOOP;
 		    }
 		} else {
-		    warn "max message size has been exceeded, aborting (in daemon child $$)";
+		    warn "max message size has been exceeded, aborting";
 		    # kill the child (the child is # not a process
 		    # group leader; running setsid in the # child
 		    # would be a bad idea because that would # prevent
@@ -122,7 +122,7 @@ while(1) {
 		    # don't care about child exit status.  but should
 		    # we wait for it anyway? maybe a good idea.
 		    xwaitpid $pid, 0;
-		    warn "child $pid exited with $? (in $$)" if $DEBUG;
+		    warn "child $pid exited with $?" if $DEBUG;
 		    # send error to client:
 		    xprint_to $conn, "err: message too big";
 		    xclose $conn;
@@ -135,7 +135,7 @@ while(1) {
 
 	    xwaitpid $pid, 0;
 	    my $exitcode= $?;
-	    warn "main process exited to $$, code $exitcode" if $DEBUG;
+	    warn "main process exited, code $exitcode" if $DEBUG;
 	    xprint_to $conn, "ok: $exitcode";
 	    xclose $conn;
 	    die $exit_0;
