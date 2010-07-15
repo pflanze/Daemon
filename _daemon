@@ -247,7 +247,12 @@ $SIG{CHLD}= do {
 			&$finish ($pid);
 		    } else {
 			warn "going to exec in $$, '$mainprogram'" if $DEBUG;
-			xexec "sh", "-c", $mainprogram, @argv;
+			xexec ("sh", "-c", $mainprogram,
+			       # the first argument is passed to $0, not $1:
+			       # (SERVICE_NAME would be useful to put
+			       # here but is not necessarily set)
+			       "mainprogram run from '$socketpath'",
+			       @argv);
 		    }
 		}
 	    }
