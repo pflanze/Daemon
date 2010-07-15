@@ -101,7 +101,7 @@ if (length $socket_group) {
 		    my ($pid)=@_;
 		    xwaitpid $pid, 0;
 		    my $exitcode= $?;
-		    warn "main process exited to $$, code $exitcode" if $DEBUG;
+		    warn "main process exited, code $exitcode" if $DEBUG;
 		    xprint_to $conn, "ok: $exitcode";
 		    xclose $conn;
 		    die $exit_0;
@@ -110,7 +110,7 @@ if (length $socket_group) {
 		my $abort_with_cleanup= sub {
 		    my ($cleanup)=@_;
 		    sub {
-			warn "max message size has been exceeded, aborting (in daemon child $$)";
+			warn "max message size has been exceeded, aborting";
 			&$cleanup;
 			# send error to client:
 			xprint_to $conn, "err: message too big";
@@ -125,10 +125,10 @@ if (length $socket_group) {
 		my $while_read_buf= sub {
 		    @_==2 or die;
 		    my ($send_buf,$abort)=@_;
-		    warn "reading connection in $$" if $DEBUG;
+		    warn "reading connection" if $DEBUG;
 		    my $loop;
 		    my $normal_end= sub {
-			warn "finished reading in $$" if $DEBUG;
+			warn "finished reading" if $DEBUG;
 		    };
 		    my $pipeerr_end= sub {
 		    };
@@ -185,7 +185,7 @@ if (length $socket_group) {
 				# but should we wait for it anyway? 
 				# maybe a good idea.
 				xwaitpid $pid, 0;
-				warn "child $pid exited with $? (in $$)" if $DEBUG;
+				warn "child $pid exited with $?" if $DEBUG;
 			    }));
 			xclose $w;
 			&$finish ($pid);
