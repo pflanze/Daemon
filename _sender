@@ -94,7 +94,7 @@ $socket->close
 if ($status eq "ok") {
     my $exitcode= $rest;
     if ($exitcode==0 or $exitcode > 255) {
-	exit ($exitcode << 8);
+	exit ($exitcode >> 8);
     } else {
 	die "$myname: remote process died with signal $exitcode\n";
     }
