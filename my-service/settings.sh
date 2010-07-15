@@ -17,7 +17,7 @@ export SERVICE_DAEMON=/opt/Daemon/_daemon
 
 # daemon settings:
 
-export DAEMON_SOCKET=/var/run/"$SERVICE_NAME".fifo
+export DAEMON_SOCKET="$SERVICE_RUN_DIR/$SERVICE_NAME.sock"
 
 # For DAEMON_SOCKET_GROUP, "" means world writable! To close it down,
 # set to a group name. You have to remove the fifo (file at
