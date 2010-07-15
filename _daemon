@@ -153,8 +153,10 @@ $SIG{CHLD}= do {
 		    my ($send_buf,$abort)=@_;
 		    warn "reading connection in $$" if $DEBUG;
 		    my $loop;
-		    my $end= sub {
-			undef $loop # (break reference cycle)
+		    my $normal_end= sub {
+			warn "finished reading in $$" if $DEBUG;
+		    };
+		    my $pipeerr_end= sub {
 		    };
 		    my $n=0;
 		    $loop= sub {
@@ -162,15 +164,15 @@ $SIG{CHLD}= do {
 			my $next=
 			   (($n < $maxmessagesize) ?
 			    ((read $conn, $buf, $bufsize) ?
-			     &$send_buf($end, $loop)
+			     &$send_buf($pipeerr_end, $loop)
 			     :
-			     $end)
+			     $normal_end)
 			    :
 			    $abort);
 			goto $next;
 		    };
 		    &$loop;
-		    warn "finished reading in $$" if $DEBUG;
+		    undef $loop # (break reference cycle)
 		};
 		$SIG{CHLD}= 'DEFAULT'; # not IGNORE, correct?
 		if ($mainprogram_stdin) {
