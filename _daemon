@@ -120,10 +120,9 @@ while(1) {
 	    &$while_read_buf
 	      (sub {
 		   my ($stop,$continue)=@_;
-		   # we don't die on errors, but signal
-		   # $stop explicitely (capturing
-		   # exceptions would be an alternative
-		   # but I don't like examining exception
+		   # we don't die on errors, but signal $stop
+		   # explicitely (capturing exceptions would be an
+		   # alternative but I don't like examining exception
 		   # texts to determine what happened)
 		   if (print $w $buf) {
 		       $continue
@@ -133,25 +132,21 @@ while(1) {
 		   }
 	       },
 	       sub {
-		   # in case of abort, kill the child
-		   # (the child is not a process group
-		   # leader; running setsid in the child
-		   # would be a bad idea because that would
-		   # prevent individual mainprogram
-		   # invocations from being killed by
-		   # _startstop; or would that be ok?)
+		   # in case of abort, kill the child (the child is
+		   # not a process group leader; running setsid in the
+		   # child would be a bad idea because that would
+		   # prevent individual mainprogram invocations from
+		   # being killed by _startstop; or would that be ok?)
 		   kill 2, $pid;
-		   # don't care about child exit status.
-		   # but should we wait for it anyway? 
-		   # maybe a good idea.
+		   # don't care about child exit status.  but should
+		   # we wait for it anyway? maybe a good idea.
 		   xwaitpid $pid, 0;
 		   warn "child $pid exited with $? (in $$)" if $DEBUG;
 		   # send error to client:
 		   xprint_to $conn, "err: message too big";
 		   xclose $conn;
-		   # (success exit code since we are ok, the
-		   # error has been sent to the right place
-		   # already: )
+		   # (success exit code since we are ok, the error has
+		   # been sent to the right place already: )
 		   die $exit_0;
 	       });
 	    xclose $w;
