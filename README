@@ -25,13 +25,6 @@ purpose:
 The trickiest part doing this is starting and stopping the daemon.
 
 
-DEPENDENCIES
-
-start-stop-daemon from Debian (this is present on all Debian
-installations, but not part of some other distributions). Not sure
-it's worth it, could be replaced.
-
-
 INSTALL
 
 - check out this directory to /opt/:
