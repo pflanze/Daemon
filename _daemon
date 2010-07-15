@@ -7,7 +7,6 @@ use Chj_library;
 
 our $bufsize= 4096; # bytes
 our $default_maxmessagesize= 100; # number of buffers of $bufsize
-our $default_maxchildren= 10;
 
 $0=~ /(.*?)([^\/]+)\z/s or die "?";
 my ($mydir, $myname)=($1,$2);
@@ -26,9 +25,6 @@ sub usage {
     DAEMON_MAXMESSAGESIZE (number of buffers of $bufsize bytes) to
     override the default of $default_maxmessagesize
 
-    DAEMON_MAXCHILDREN (max. number of concurrently active
-    mainprograms) to override the default of $default_maxchildren
-
 ";
 exit (@_ ? 1 : 0);
 }
@@ -40,7 +36,6 @@ our $socket_group= xenv "DAEMON_SOCKET_GROUP";
 our $mainprogram_stdin= $ENV{DAEMON_MAINPROGRAM_STDIN};
 our $mainprogram_argv= $ENV{DAEMON_MAINPROGRAM_ARGV};
 our $maxmessagesize = $ENV{DAEMON_MAXMESSAGESIZE} || $default_maxmessagesize;
-our $maxchildren= $ENV{DAEMON_MAXCHILDREN} || $default_maxchildren;
 
 usage "only one of DAEMON_MAINPROGRAM_STDIN or DAEMON_MAINPROGRAM_ARGV can be given"
   if ($mainprogram_stdin and $mainprogram_argv);
@@ -80,21 +75,6 @@ if (length $socket_group) {
 }
 
 
-my $numchildren=0;
-
-use POSIX ":sys_wait_h"; # WNOHANG
-
-$SIG{CHLD}= do {
-    my $pid;
-    sub {
-	while (1) {
-	    $pid= waitpid -1,WNOHANG;
-	    last if (($pid == -1) or ($pid == 0)); #GRR somehow mis documented??!
-	    $numchildren--;
-	}
-    };
-};
-
 
 # --- main ----------------------------
 
@@ -110,15 +90,9 @@ $SIG{CHLD}= do {
 	  };
 	warn "got a connection from ".$conn->peername if $DEBUG;
 	# ^ XX: convert to a human-readable string
-	if ($numchildren < $maxchildren) {
-	    if (my $pid= xfork) {
-		undef $conn;
-		warn "forked off child $pid" if $DEBUG;
-		$numchildren++;
-		#^ XX: is there is a race (in the ++ itself) even with
-		# Perl's safe signal handling?  In any case not very
-		# likely, and the worst case is a DoS.
-	    } else {
+
+	my $exit_0= bless ["exit 0"],"EXN";
+	eval {
 		# start main program process; choose the right data
 		# passing mechanism according to the settings
 
@@ -130,7 +104,7 @@ $SIG{CHLD}= do {
 		    warn "main process exited to $$, code $exitcode" if $DEBUG;
 		    xprint_to $conn, "ok: $exitcode";
 		    xclose $conn;
-		    exit 0;
+		    die $exit_0;
 		};
 		# abortive finish:
 		my $abort_with_cleanup= sub {
@@ -144,7 +118,7 @@ $SIG{CHLD}= do {
 			# (success exit code since we are ok, the
 			# error has been sent to the right place
 			# already: )
-			exit 0;
+			die $exit_0;
 		    }
 		};
 		my $buf;
@@ -248,9 +222,14 @@ $SIG{CHLD}= do {
 			xexec "sh", "-c", $mainprogram, @argv;
 		    }
 		}
+	    };
+	my $e=$@;
+	if (ref $e or $e) {
+	    if ($e == $exit_0) {
+		# ok
+	    } else {
+		warn "got exception: $e";
 	    }
-	} else {
-	    warn "$myname: too many children, dropping connection\n";##from ...
 	}
 	warn "going to accept again" if $DEBUG;
     }

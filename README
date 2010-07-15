@@ -15,9 +15,11 @@ purpose:
    where some environment variables, current working directory, and
    possibly more is under the control of the user).
 
- - the number of concurrently running root processes can be limited
-   (even to 1, although in the current implementation further
-   attempts to run a process will just fail, not wait in a queue).
+ - only one instance of the root command is run at any one time;
+   multiple requests are being stacked up and run one after
+   another. So there is no risk of overlapping actions that are meant
+   to be isolated (or said differently, no need to care about correct
+   locking)
 
 
 INSTALL
