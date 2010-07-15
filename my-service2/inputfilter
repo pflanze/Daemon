@@ -1,0 +1,75 @@
+#!/usr/bin/perl -w
+
+use strict;
+
+# set reading till EOF:
+undef $/;
+
+my $input = <STDIN>;
+
+close STDIN or die $!;
+
+my @args= split "\0", $input;
+
+if (0) { # debugging
+    for (@args) {
+	print "arg: '$_'\n";
+    }
+}
+
+# limit allowable input:
+
+sub xnonneginteger {
+    my ($str)=@_;
+    defined $str
+      or die "missing argument";
+    $str=~ /^(\d+)\z/
+      or die "not a non-negative integer number string: '$str'";
+    my $n= $1;
+    # set "reasonable" limits to try to avoid hitting possible
+    # overflow bugs in C programs:
+    $n < (2**31)
+      or die "number too big to be accepted: $n";
+    $n
+}
+
+sub xnaturalnumber {
+    my ($str)=@_;
+    defined $str
+      or die "missing argument";
+    my $n= xnonneginteger $str;
+    $n > 0
+      or die "not a natural number: $n";
+    $n
+}
+
+sub xreasonablepath {
+    # well too much can go wrong with paths, you'd really need to
+    # write your own check.
+    my ($str)=@_;
+    defined $str
+      or die "missing argument";
+    # forbid whitespace, some meta characters, and dots (to avoid
+    # "..", not making much sense here but anyway something to keep in
+    # mind):
+    my $pathsegment= qr|[^/\s\$\`\.]+|;
+    $str=~ m|^(/(?:$pathsegment/)*$pathsegment)\z|
+      or die "string does not match path requirements: '$str'";
+    my $path= $1;
+    -e $path
+      and die "path already exists: '$path'";
+    $path
+}
+
+
+my ($unchecked_path,
+    $unchecked_numberofbytes,
+    $unchecked_numberofruns,
+   )= @args;
+
+exec ("echo",
+      xreasonablepath($unchecked_path),
+      xnonneginteger($unchecked_numberofbytes),
+      xnaturalnumber($unchecked_numberofruns),
+     )
+  or exit 127;

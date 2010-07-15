@@ -1,0 +1,5 @@
+#!/bin/bash
+
+source /opt/Daemon/my-service2/settings.sh
+
+exec /opt/Daemon/_startstop "$@"
