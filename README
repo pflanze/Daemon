@@ -15,8 +15,9 @@ purpose:
    where some environment variables, current working directory, and
    possibly more is under the control of the user).
 
-
-The trickiest part doing this is starting and stopping the daemon.
+ - the number of concurrently running root processes can be limited
+   (even to 1, although in the current implementation further
+   attempts to run a process will just fail, not wait in a queue).
 
 
 INSTALL
