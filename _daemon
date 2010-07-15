@@ -15,8 +15,9 @@ sub usage {
     print STDERR map{"$_\n"} @_ if @_;
     print "$myname
 
-  Requires the DAEMON_SOCKET, DAEMON_SOCKET_GROUP, DAEMON_MAINPROGRAM
-  env vars to be set.
+  Requires the DAEMON_SOCKET, DAEMON_SOCKET_GROUP, and either
+  DAEMON_MAINPROGRAM_STDIN or DAEMON_MAINPROGRAM_ARGV env vars to be
+  set.
 
   Optionally accepts the environment variables:
 
