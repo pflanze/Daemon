@@ -49,3 +49,13 @@ CONFIGURE
   * move or symlink 'startstop' to '/etc/init.d/your-service',
   * add symlink in /etc/rc2.d/ (use whatever sysv init configuration
     procedure you prefer)
+
+
+DEBUGGING
+
+The outputs (stdout and stderr) of the daemon are going to the syslog,
+run "tail -f /var/log/syslog" to follow them. To make the daemon
+verbose, start it with DEBUG=1:
+
+# DEBUG=1 my-service/startstop restart
+
