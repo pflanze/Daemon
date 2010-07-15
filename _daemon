@@ -133,9 +133,6 @@ $SIG{CHLD}= do {
 		    sub {
 			warn "max message size has been exceeded, aborting (in daemon child $$)";
 			&$cleanup;
-			# don't care about child exit status.
-			# but should we wait for it anyway? maybe a good idea.
-			xwaitpid $pid, 0;
 			# send error to client:
 			xprint_to $conn, "err: message too big";
 			xclose $conn;
@@ -202,7 +199,12 @@ $SIG{CHLD}= do {
 				# prevent individual mainprogram
 				# invocations from being killed by
 				# _startstop; or would that be ok?)
-				kill 2, $pid
+				kill 2, $pid;
+				# don't care about child exit status.
+				# but should we wait for it anyway? 
+				# maybe a good idea.
+				xwaitpid $pid, 0;
+				warn "child $pid exited with $? (in $$)" if $DEBUG;
 			    }));
 			xclose $w;
 			&$finish ($pid);
