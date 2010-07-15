@@ -108,6 +108,7 @@ while(1) {
 			    last LOOP;
 			}
 		    } else {
+			warn "finished reading in $$" if $DEBUG;
 			last LOOP;
 		    }
 		} else {
@@ -130,7 +131,6 @@ while(1) {
 		    die $exit_0;
 		}
 	    }
-	    warn "finished reading in $$" if $DEBUG;
 	    xclose $w;
 
 	    xwaitpid $pid, 0;
