@@ -45,7 +45,7 @@ CONFIGURE
   directory), then adapt it:
 
   * change the contents of settings.sh (most certainly SERVICE_NAME
-    and one of DAEMON_MAINPROGRAM_*)
+    and DAEMON_MAINPROGRAM)
   * adapt the path to settings.sh in the 'source ' line of the
     scripts: sender startstop
   * move or symlink 'startstop' to '/etc/init.d/your-service',

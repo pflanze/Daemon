@@ -24,19 +24,7 @@ export DAEMON_SOCKET=/var/run/"$SERVICE_NAME".fifo
 # DAEMON_SOCKET) if you change this setting for it to have an effect.
 export DAEMON_SOCKET_GROUP=""
 
-# DAEMON_MAINPROGRAM_* will be run each time a message is received;
-# the contents of these variables are passed to a shell (sh -c).  Set
-# *one* of these variables only. The difference is that for the first
-# variable the message is presented on stdin, for the second as argv
-# to the shell running the variable (get the values from "$@").
-
-#export DAEMON_MAINPROGRAM_STDIN="perl -wne 's/\0/(nullbyte)/sg; print'; echo"
-
-export DAEMON_MAINPROGRAM_ARGV='perl -we '\''for(@ARGV){print "arg: [$_]\n"}'\'' a b c "$@" z'
-# **NOTE**: passing data as program arguments is not protected from
-# read access by any user on the system. For security sensitive data
-# use DAEMON_MAINPROGRAM_STDIN instead, and use the MESSAGE env var to
-# feed data to the '_sender' program.
-# Also be very careful not to forget double quotes around argument
-# variable references to prevent the shell from evaluating the
-# contents! Forget them and you've got a security hole.
+# DAEMON_MAINPROGRAM will be run each time a message is received; the
+# contents of this variable is passed to a shell (sh -c).  The message
+# is presented on stdin.
+export DAEMON_MAINPROGRAM="perl -wne 's/\0/(nullbyte)/sg; print'; echo"

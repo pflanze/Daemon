@@ -15,8 +15,7 @@ sub usage {
     print "$myname
 
   Requires the DAEMON_SOCKET, DAEMON_SOCKET_GROUP, and either
-  DAEMON_MAINPROGRAM_STDIN or DAEMON_MAINPROGRAM_ARGV env vars to be
-  set.
+  DAEMON_MAINPROGRAM env vars to be set.
 
   Optionally accepts the environment variables:
 
@@ -33,14 +32,8 @@ usage if @ARGV;
 our $DEBUG= $ENV{DEBUG};
 our $socketpath= xenv "DAEMON_SOCKET";
 our $socket_group= xenv "DAEMON_SOCKET_GROUP";
-our $mainprogram_stdin= $ENV{DAEMON_MAINPROGRAM_STDIN};
-our $mainprogram_argv= $ENV{DAEMON_MAINPROGRAM_ARGV};
+our $mainprogram= xenv "DAEMON_MAINPROGRAM";
 our $maxmessagesize = $ENV{DAEMON_MAXMESSAGESIZE} || $default_maxmessagesize;
-
-usage "only one of DAEMON_MAINPROGRAM_STDIN or DAEMON_MAINPROGRAM_ARGV can be given"
-  if ($mainprogram_stdin and $mainprogram_argv);
-usage "one of DAEMON_MAINPROGRAM_STDIN or DAEMON_MAINPROGRAM_ARGV must be given"
-  unless ($mainprogram_stdin or $mainprogram_argv);
 
 use IO::Socket::UNIX;
 
@@ -93,34 +86,6 @@ if (length $socket_group) {
 
 	my $exit_0= bless ["exit 0"],"EXN";
 	eval {
-		# start main program process; choose the right data
-		# passing mechanism according to the settings
-
-		# regular finish:
-		my $finish= sub {
-		    my ($pid)=@_;
-		    xwaitpid $pid, 0;
-		    my $exitcode= $?;
-		    warn "main process exited to $$, code $exitcode" if $DEBUG;
-		    xprint_to $conn, "ok: $exitcode";
-		    xclose $conn;
-		    die $exit_0;
-		};
-		# abortive finish:
-		my $abort_with_cleanup= sub {
-		    my ($cleanup)=@_;
-		    sub {
-			warn "max message size has been exceeded, aborting (in daemon child $$)";
-			&$cleanup;
-			# send error to client:
-			xprint_to $conn, "err: message too big";
-			xclose $conn;
-			# (success exit code since we are ok, the
-			# error has been sent to the right place
-			# already: )
-			die $exit_0;
-		    }
-		};
 		my $buf;
 		my $while_read_buf= sub {
 		    @_==2 or die;
@@ -140,15 +105,16 @@ if (length $socket_group) {
 			     :
 			     $end)
 			    :
-			    $abort);
+			    sub {
+				warn "max message size has been exceeded, aborting (in daemon child $$)";
+				&$abort
+			    });
 			goto $next;
 		    };
 		    &$loop;
 		    warn "finished reading in $$" if $DEBUG;
 		};
 		$SIG{CHLD}= 'DEFAULT'; # not IGNORE, correct?
-		if ($mainprogram_stdin) {
-		    my $mainprogram= $mainprogram_stdin;
 
 		    my ($r,$w)= xpipe;
 		    if (my $pid= xfork) {
@@ -169,59 +135,42 @@ if (length $socket_group) {
 				   $stop
 			       }
 			   },
-			   &$abort_with_cleanup
-			   (sub {
-				# in case of abort, kill the child
-				# (the child is not a process group
-				# leader; running setsid in the child
-				# would be a bad idea because that would
-				# prevent individual mainprogram
-				# invocations from being killed by
-				# _startstop; or would that be ok?)
-				kill 2, $pid;
-				# don't care about child exit status.
-				# but should we wait for it anyway? 
-				# maybe a good idea.
-				xwaitpid $pid, 0;
-				warn "child $pid exited with $? (in $$)" if $DEBUG;
-			    }));
+			   sub {
+			       # in case of abort, kill the child
+			       # (the child is not a process group
+			       # leader; running setsid in the child
+			       # would be a bad idea because that would
+			       # prevent individual mainprogram
+			       # invocations from being killed by
+			       # _startstop; or would that be ok?)
+			       kill 2, $pid;
+			       # don't care about child exit status.
+			       # but should we wait for it anyway? 
+			       # maybe a good idea.
+			       xwaitpid $pid, 0;
+			       warn "child $pid exited with $? (in $$)" if $DEBUG;
+			       # send error to client:
+			       xprint_to $conn, "err: message too big";
+			       xclose $conn;
+			       # (success exit code since we are ok, the
+			       # error has been sent to the right place
+			       # already: )
+			       die $exit_0;
+			   });
 			xclose $w;
-			&$finish ($pid);
+			
+			xwaitpid $pid, 0;
+			my $exitcode= $?;
+			warn "main process exited to $$, code $exitcode" if $DEBUG;
+			xprint_to $conn, "ok: $exitcode";
+			xclose $conn;
+			die $exit_0;
 		    } else {
 			xclose $w;
 			xdup2 $r, 0;
 			warn "going to exec in $$, '$mainprogram'" if $DEBUG;
 			xexec $mainprogram;
 		    }
-		} else {
-		    my $mainprogram= $mainprogram_argv;
-
-		    my $input="";
-		    &$while_read_buf
-		      (sub {
-			   my ($stop,$continue)=@_;
-			   $input.=$buf;
-			   $continue
-		       },
-		       &$abort_with_cleanup
-		       (sub {
-			    # just let it exit, we haven't started
-			    # $mainprogram yet
-			}));
-
-		    # make sure empty arguments are not dropped, by
-		    # requesting the field after the trailing marker,
-		    # then popping it off
-		    my @argv= split '\0', $input, -1;
-		    pop @argv;
-
-		    if (my $pid= xfork) {
-			&$finish ($pid);
-		    } else {
-			warn "going to exec in $$, '$mainprogram'" if $DEBUG;
-			xexec "sh", "-c", $mainprogram, @argv;
-		    }
-		}
 	    };
 	my $e=$@;
 	if (ref $e or $e) {
