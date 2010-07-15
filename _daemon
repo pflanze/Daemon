@@ -7,7 +7,7 @@ use Chj_library;
 
 our $bufsize= 4096; # bytes
 our $default_maxmessagesize= 100; # number of buffers of $bufsize
-our $maxchildren= 10;
+our $default_maxchildren= 10;
 
 $0=~ /(.*?)([^\/]+)\z/s or die "?";
 my ($mydir, $myname)=($1,$2);
@@ -26,6 +26,9 @@ sub usage {
     DAEMON_MAXMESSAGESIZE (number of buffers of $bufsize bytes) to
     override the default of $default_maxmessagesize
 
+    DAEMON_MAXCHILDREN (max. number of concurrently active
+    mainprograms) to override the default of $default_maxchildren
+
 ";
 exit (@_ ? 1 : 0);
 }
@@ -37,6 +40,7 @@ our $socket_group= xenv "DAEMON_SOCKET_GROUP";
 our $mainprogram_stdin= $ENV{DAEMON_MAINPROGRAM_STDIN};
 our $mainprogram_argv= $ENV{DAEMON_MAINPROGRAM_ARGV};
 our $maxmessagesize = $ENV{DAEMON_MAXMESSAGESIZE} || $default_maxmessagesize;
+our $maxchildren= $ENV{DAEMON_MAXCHILDREN} || $default_maxchildren;
 
 usage "only one of DAEMON_MAINPROGRAM_STDIN or DAEMON_MAINPROGRAM_ARGV can be given"
   if ($mainprogram_stdin and $mainprogram_argv);
